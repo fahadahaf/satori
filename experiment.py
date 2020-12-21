@@ -1,3 +1,4 @@
+# get rid of word2vec related stuff for now (or keep it for future work?) #
 import gensim
 import numpy as np
 import os

@@ -112,10 +112,6 @@ def main():
             _ = infer_intr_attention()
         if arg_space.methodType in ['FIS','BOTH']:
             _ = infer_intr_FIS()
-    
-
-        
- 
 
 
 if __name__ == "__main__":

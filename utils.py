@@ -43,10 +43,7 @@ def annotate_motifs(annotate_arg, motif_dir):
         np.savetxt(motif_dir+'/tomtom/tomtom_annotated.tsv', final, delimiter='\t', fmt='%s')
 
 
-#-----------Calculating Positive and Negative population------------#
 def get_popsize_for_interactions(argSpace, per_batch_labelPreds, batchSize):
-    #per_batch_labelPreds = res_test[4]
-    ##print(lohahi)
     pos_score_cutoff = argSpace.scoreCutoff
     num_labels = argSpace.numLabels
 
@@ -78,8 +75,7 @@ def get_popsize_for_interactions(argSpace, per_batch_labelPreds, batchSize):
                         bg_indices_multiLabel.append([j*batchSize + k, prec])
             if numPosExamples == argSpace.intSeqLimit:
                 break
-
-
+            
     if argSpace.useAll == False and argSpace.numLabels != 2:
         bg_indices_multiLabel = np.asarray(bg_indices_multiLabel)[:,0].astype(int)
 
