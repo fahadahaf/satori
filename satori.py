@@ -96,11 +96,16 @@ def main():
     arg_space = parseArgs()
     #create params dictionary
     params_dict = get_params_dict(arg_space.hparamfile)
-    test_resBlob, CNNWeights = run_experiment(device, arg_space, params_dict)
+    experiment_blob = run_experiment(device, arg_space, params_dict)
+    test_resBlob = experiment_blob['res_test']
+    CNNWeights = experiment_blob['CNN_weights']
     if arg_space.motifAnalysis:
-        motif_dir_pos, num_examples_pos = motif_analysis(test_resBlob, CNNWeights, arg_space)
-        motif_dir_neg, num_examples_neg = motif_analysis(test_resBlob, CNNWeights,  arg_space, for_negative=True)
+        motif_dir_pos, _ = motif_analysis(test_resBlob, CNNWeights, arg_space)
+        motif_dir_neg, _ = motif_analysis(test_resBlob, CNNWeights,  arg_space, for_negative=True)
     
+    experiment_blob['motif_dir_pos'] = motif_dir_pos
+    experiment_blob['motif_dir_neg'] = motif_dir_neg
+
     if arg_space.annotateTomTom != None:
         if arg_space.verbose:
             print("Annotating motifs...")
@@ -109,9 +114,9 @@ def main():
 
     if arg_space.featInteractions:
         if arg_space.methodType in ['SATORI','BOTH']:
-            _ = infer_intr_attention()
+            _ = infer_intr_attention(experiment_blob, params_dict, arg_space, device)
         if arg_space.methodType in ['FIS','BOTH']:
-            _ = infer_intr_FIS()
+            _ = infer_intr_FIS(experiment_blob, params_dict, arg_space, device)
 
 
 if __name__ == "__main__":

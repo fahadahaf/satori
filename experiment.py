@@ -192,7 +192,7 @@ def load_datasets(arg_space, use_embds, batchSize, kmer_len=None, embd_size=None
     train_loader = DataLoader(final_dataset, batch_size = batchSize, sampler = train_sampler)
     test_loader = DataLoader(final_dataset, batch_size = batchSize, sampler = test_sampler)
     valid_loader = DataLoader(final_dataset, batch_size = batchSize, sampler = valid_sampler)
-    return train_loader, test_loader, valid_loader, modelwv, output_dir
+    return train_loader, train_indices, test_loader, test_indices, valid_loader, valid_indices, modelwv, output_dir
 
 
 def run_experiment(device, arg_space, params):
@@ -218,7 +218,7 @@ def run_experiment(device, arg_space, params):
         embd_window = params['embd_window']
 
     prefix = 'modelRes' #Using generic, not sure if we need it as an argument or part of the params dict
-    train_loader, test_loader, valid_loader, modelwv, output_dir = load_datasets(arg_space, use_embds, batch_size, kmer_len, embd_size, embd_window)
+    train_loader, train_indices, test_loader, test_indices, valid_loader, valid_indices, modelwv, output_dir = load_datasets(arg_space, use_embds, batch_size, kmer_len, embd_size, embd_window)
     #print(params)
     if net_type == 'basset':
         if arg_space.verbose:
@@ -285,7 +285,17 @@ def run_experiment(device, arg_space, params):
     np.savetxt(output_dir+'/'+prefix+'_results.txt',some_res,fmt='%s',delimiter='\t')
 
     CNNWeights = net.layer1[0].weight.cpu().detach().numpy()
-    return res_test, CNNWeights
+    res_blob = {'res_test': res_test, 
+                'train_loader': train_loader,
+                'train_indices': train_indices, 
+                'test_loader': test_loader,
+                'test_indices': test_indices,
+                'CNN_weights': CNNWeights,
+                'criterion': criterion,
+                'output_dir': output_dir,
+                'net': net
+               }
+    return res_blob
 
 
 def motif_analysis(res_test, CNNWeights, argSpace, for_negative=False):
