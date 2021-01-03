@@ -2365,7 +2365,7 @@ for batch_idx, batch in enumerate(test_loader):
 		test_points = datapoints[i]#i
 		
 		##this baseline assumes all 0s
-		baseline = test_points*0#
+		#baseline = test_points*0#
 		
 		##this baseline should be used with deepLIFTSHAP
 		#baseline = datapoints[:100]#test_points*0
