@@ -30,7 +30,7 @@ class PositionalEncoding(nn.Module):
 
 
 class AttentionNet(nn.Module): #for the model that uses CNN, RNN (optionally), and MH attention
-    def __init__(self, params, wvmodel=None, useEmbeddings=False, device=None, reuseWeightsQK=False):
+    def __init__(self, params, device=None, genPAttn=True, reuseWeightsQK=False):
         super(AttentionNet, self).__init__()
         self.numMultiHeads = params['num_multiheads']
         self.SingleHeadSize = params['singlehead_size']#SingleHeadSize
@@ -52,45 +52,38 @@ class AttentionNet(nn.Module): #for the model that uses CNN, RNN (optionally), a
         self.numClasses = params['num_classes']
         self.device = device
         self.reuseWeightsQK = reuseWeightsQK
-        
-        self.useEmbeddings = useEmbeddings
-        if not self.useEmbeddings:
-            self.numInputChannels = params['input_channels'] #number of channels, one hot encoding
-        else:
-            self.embSize = params['embd_size']
-            weights = torch.FloatTensor(wvmodel.wv.vectors)
-            self.embedding = nn.Embedding.from_pretrained(weights, freeze=False)
-            self.numInputChannels = self.embSize
-		
+        self.numInputChannels = params['input_channels'] #number of channels, one hot encoding
+        self.genPAttn = genPAttn
+
         if self.usePE:
             self.pe = PositionalEncoding(d_model = self.numInputChannels, dropout=0.1)
-		
+
         if self.useCNN and self.useCNNpool:
             self.layer1  = nn.Sequential(nn.Conv1d(in_channels=self.numInputChannels, out_channels=self.numCNNfilters,
                                          kernel_size=self.filterSize, padding=self.CNNpadding, bias=False),nn.BatchNorm1d(num_features=self.numCNNfilters),
                                          nn.ReLU() if self.CNN1useExponential==False else Exponential(),
                                          nn.MaxPool1d(kernel_size=self.CNNpoolSize))
             self.dropout1 = nn.Dropout(p=0.2)
-        
+
         if self.useCNN and self.useCNNpool == False:
             self.layer1  = nn.Sequential(nn.Conv1d(in_channels=self.numInputChannels, out_channels=self.numCNNfilters,
                                          kernel_size=self.filterSize, padding=self.CNNpadding, bias=False),
                                          nn.BatchNorm1d(num_features=self.numCNNfilters),
                                          nn.ReLU() if self.CNN1useExponential==False else Exponential())
             self.dropout1 = nn.Dropout(p=0.2)
-		
+
         if self.useRNN:
             self.RNN = nn.LSTM(self.numInputChannels if self.useCNN==False else self.numCNNfilters, self.RNN_hiddenSize, num_layers=2, bidirectional=True)
             self.dropoutRNN = nn.Dropout(p=0.4)
             self.Q = nn.ModuleList([nn.Linear(in_features=2*self.RNN_hiddenSize, out_features=self.SingleHeadSize) for i in range(0,self.numMultiHeads)])
             self.K = nn.ModuleList([nn.Linear(in_features=2*self.RNN_hiddenSize, out_features=self.SingleHeadSize) for i in range(0,self.numMultiHeads)])
             self.V = nn.ModuleList([nn.Linear(in_features=2*self.RNN_hiddenSize, out_features=self.SingleHeadSize) for i in range(0,self.numMultiHeads)])
-		
+
         if self.useRNN == False and self.useCNN == False:
             self.Q = nn.ModuleList([nn.Linear(in_features=self.numInputChannels, out_features=self.SingleHeadSize) for i in range(0,self.numMultiHeads)])
             self.K = nn.ModuleList([nn.Linear(in_features=self.numInputChannels, out_features=self.SingleHeadSize) for i in range(0,self.numMultiHeads)])
             self.V = nn.ModuleList([nn.Linear(in_features=self.numInputChannels, out_features=self.SingleHeadSize) for i in range(0,self.numMultiHeads)])
-		
+
         if self.useRNN == False and self.useCNN == True:
             self.Q = nn.ModuleList([nn.Linear(in_features=self.numCNNfilters, out_features=self.SingleHeadSize) for i in range(0,self.numMultiHeads)])
             self.K = nn.ModuleList([nn.Linear(in_features=self.numCNNfilters, out_features=self.SingleHeadSize) for i in range(0,self.numMultiHeads)])
@@ -104,9 +97,9 @@ class AttentionNet(nn.Module): #for the model that uses CNN, RNN (optionally), a
         self.RELU = nn.ModuleList([nn.ReLU() for i in range(0,self.numMultiHeads)])
         self.MultiHeadLinear = nn.Linear(in_features=self.SingleHeadSize*self.numMultiHeads, out_features=self.MultiHeadSize)#50
         self.MHReLU = nn.ReLU()
-		
+
         self.fc3 = nn.Linear(in_features=self.MultiHeadSize, out_features=self.numClasses)
-		
+
     def attention(self, query, key, value, mask=None, dropout=0.0):
         #based on: https://nlp.seas.harvard.edu/2018/04/03/attention.html
         d_k = query.size(-1)
@@ -114,29 +107,26 @@ class AttentionNet(nn.Module): #for the model that uses CNN, RNN (optionally), a
         p_attn = F.softmax(scores, dim = -1)
         p_attn = F.dropout(p_attn, p=dropout,training=self.training)
         return torch.matmul(p_attn, value), p_attn
-	
+
     def forward(self, inputs):
-        if self.useEmbeddings:
-            output = self.embedding(inputs)
-            output = output.permute(0,2,1)
-        else:
-            output = inputs
+        output = inputs
 
         if self.usePE:
             output = self.pe(output)
-        
+
         if self.useCNN:
             output = self.layer1(output)
             output = self.dropout1(output)
             output = output.permute(0,2,1)
-        
+
         if self.useRNN:
             output, _ = self.RNN(output)
             F_RNN = output[:,:,:self.RNN_hiddenSize]
             R_RNN = output[:,:,self.RNN_hiddenSize:] 
             output = torch.cat((F_RNN,R_RNN),2)
             output = self.dropoutRNN(output)
-		
+
+        pAttn_concat = torch.Tensor([]).to(self.device)
         attn_concat = torch.Tensor([]).to(self.device)
         for i in range(0,self.numMultiHeads):
             query, key, value = self.Q[i](output), self.K[i](output), self.V[i](output)
@@ -145,7 +135,9 @@ class AttentionNet(nn.Module): #for the model that uses CNN, RNN (optionally), a
             if self.usepooling:
                 attnOut = self.MAXPOOL[i](attnOut.permute(0,2,1)).permute(0,2,1)
             attn_concat = torch.cat((attn_concat,attnOut),dim=2)
-        
+            if self.genPAttn:
+                pAttn_concat = torch.cat((pAttn_concat, p_attn), dim=2)
+
         output = self.MultiHeadLinear(attn_concat)
         output = self.MHReLU(output)
 
@@ -155,4 +147,4 @@ class AttentionNet(nn.Module): #for the model that uses CNN, RNN (optionally), a
 
         output = self.fc3(output)	
         assert not torch.isnan(output).any()
-        return output
+        return output,pAttn_concat

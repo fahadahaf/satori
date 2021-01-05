@@ -1,5 +1,7 @@
 import numpy as np
 
+from utils import get_params_dict, get_popsize_for_interactions, get_intr_filter_keys
+
 
 def get_filters_in_individual_seq(sdata):
 	header,num_filters,filter_data_dict,CNNfirstpool = sdata
@@ -175,7 +177,6 @@ def score_individual_head_bg(data):
 						filter_Intr_Attn[x_ind] = attn_val #[y_ind] = attn_val
 					filter_Intr_Pos[x_ind] = pos_diff#[y_ind] = pos_diff
 						
-				
 	return y_ind,filter_Intr_Attn,filter_Intr_Pos
 
 
@@ -332,7 +333,7 @@ def estimate_interactions_bg(num_filters, params, tomtom_data, motif_dir, verbos
 	return pop_size
 
 
-# -------------Later Part---------------- #
+# ------------------TODO------------------ #
 # create a single function that can process a head regardlesss of 
 # main or background data
 def score_individual_head_exp():
@@ -346,9 +347,193 @@ def estimate_interactions_exp():
 
 # a function that can be used to process the interactions, generate plots and other stuff
 # perhaps can use a function from post process for ploting
-def to_be_named_helper():
-	pass
+def analyze_interactions():
+
+	if plot_dist:
+		resMain = Filter_Intr_Attn[Filter_Intr_Attn!=-1]                                                                                                                                               
+		resBg = Filter_Intr_Attn_neg[Filter_Intr_Attn_neg!=-1]
+		resMainHist = np.histogram(resMain,bins=20)
+		resBgHist = np.histogram(resBg,bins=20)
+		plt.plot(resMainHist[1][1:],resMainHist[0]/sum(resMainHist[0]),linestyle='--',marker='o',color='g',label='main')
+		plt.plot(resBgHist[1][1:],resBgHist[0]/sum(resBgHist[0]),linestyle='--',marker='x',color='r',label='background')
+		plt.legend(loc='best',fontsize=10)
+		plt.savefig(Interact_dir+'/normalized_Attn_scores_distributions.pdf')
+		plt.clf()
+
+		plt.hist(resMain,bins=20,color='g',label='main')
+		plt.hist(resBg,bins=20,color='r',alpha=0.5,label='background')
+		plt.legend(loc='best',fontsize=10)
+		plt.savefig(Interact_dir+'/Attn_scores_distributions.pdf')
+		plt.clf()
+		
+		Bg_MaxMean = []
+		Main_MaxMean = []
+		for entry in Filter_Intr_Attn:
+			try:
+				Main_MaxMean.append([np.max(entry[entry!=-1]),np.mean(entry[entry!=-1])])
+			except:
+				continue	
+		for entry in Filter_Intr_Attn_neg:
+			try:
+				Bg_MaxMean.append([np.max(entry[entry!=-1]),np.mean(entry[entry!=-1])])
+			except:
+				continue
+			
+		Bg_MaxMean = np.asarray(Bg_MaxMean)
+		Main_MaxMean = np.asarray(Main_MaxMean)
+		
+		plt.hist(Main_MaxMean[:,0],bins=20,color='g',label='main')
+		plt.hist(Bg_MaxMean[:,0],bins=20,color='r',alpha=0.5,label='background')
+		plt.legend(loc='best',fontsize=10)
+		plt.savefig(Interact_dir+'/Attn_scores_distributions_MaxPerInteraction.pdf')
+		plt.clf()
+		
+		plt.hist(Main_MaxMean[:,1],bins=20,color='g',label='main')
+		plt.hist(Bg_MaxMean[:,1],bins=20,color='r',alpha=0.5,label='background')
+		plt.legend(loc='best',fontsize=10)
+		plt.savefig(Interact_dir+'/Attn_scores_distributions_MeanPerInteraction.pdf')
+		plt.clf()
+	
+	attnLimits = [argSpace.attnCutoff * i for i in range(1,11)] #save results for 10 different attention cutoff values (maximum per interaction) eg. [0.05, 0.10, 0.15, 0.20, 0.25, ...]
+	for attnLimit in attnLimits:
+		pval_info = []#{}
+		for i in range(0,Filter_Intr_Attn.shape[0]):                                                                                                                                                   
+			pos_attn = Filter_Intr_Attn[i,:]                                                                                                                                                              
+			pos_attn = pos_attn[pos_attn!=-1]#pos_attn[pos_attn>0.04] #pos_attn[pos_attn!=-1]                                                                                                                                                                   
+			neg_attn = Filter_Intr_Attn_neg[i,:]                                                                                                                                                          
+			neg_attn = neg_attn[neg_attn!=-1]#neg_attn[neg_attn>0.04] #neg_attn[neg_attn!=-1] 
+			num_pos = len(pos_attn)
+			num_neg = len(neg_attn)
+			if len(pos_attn) <= 1:# or len(neg_attn) <= 1:
+				continue
+			if len(neg_attn) <= 1: #if just 1 or 0 values in neg attn, get a vector with all values set to 0 (same length as pos_attn)
+				neg_attn = np.asarray([0 for i in range(0,num_pos)])
+			if np.max(pos_attn) < attnLimit: # 
+				continue
+			pos_posn = Filter_Intr_Pos[i,:]  
+			#pos_posn_mean = pos_posn[pos_posn!=-1].mean()
+			pos_posn_mean = pos_posn[np.argmax(Filter_Intr_Attn[i,:])] #just pick the max
+			neg_posn = Filter_Intr_Pos_neg[i,:]  
+			#neg_posn_mean = neg_posn[neg_posn!=-1].mean()
+			neg_posn_mean = neg_posn[np.argmax(Filter_Intr_Attn_neg[i,:])] #just pick the max
+			stats,pval = mannwhitneyu(pos_attn,neg_attn,alternative='greater')#ttest_ind(pos_d,neg_d)#mannwhitneyu(pos_d,neg_d,alternative='greater')                                                        
+			pval_info.append([i, pos_posn_mean, neg_posn_mean,num_pos,num_neg, stats,pval])#pval_dict[i] = [i,stats,pval]                                                                                                                                                              
+			#if i%100==0:                                                                                                                                                                               
+			#	print('Done: ',i) 
+		pval_info = np.asarray(pval_info)
+		res_final = pval_info#[pval_info[:,-1]<0.01] #can be 0.05 or any other threshold #For now, lets take care of this in post processing (jupyter notebook)
+		res_final_int = []                                                                                                                                                                                                                                                                                                                                            
+		for i in range(0,res_final.shape[0]):                                                                                                                                                          
+			#res_final_int.append([res_final[i][-1],Filter_Intr_Keys[int(res_final[i][0])]])                                                                                                           
+			value = int(res_final[i][0])                                                                                                                                                               
+			pval = res_final[i][-1]
+			pp_mean = res_final[i][1]
+			np_mean = res_final[i][2]  
+			num_pos = res_final[i][3]
+			num_neg = res_final[i][4]         
+			stats = res_final[i][-2]                                                                                                                                                         
+			for key in Filter_Intr_Keys:                                                                                                                                                               
+				if Filter_Intr_Keys[key] == value:                                                                                                                                                     
+					res_final_int.append([key,value,pp_mean,np_mean,num_pos,num_neg,stats,pval])  
+		
+		res_final_int = np.asarray(res_final_int) 
+		qvals = multipletests(res_final_int[:,-1].astype(float), method='fdr_bh')[1] #res_final_int[:,1].astype(float)
+		res_final_int = np.column_stack((res_final_int,qvals))
+		
+		final_interactions = [['filter_interaction','example_no','motif1','motif1_qval','motif2','motif2_qval','mean_distance','mean_distance_bg','num_obs','num_obs_bg','pval','adjusted_pval']]
+		for entry in res_final_int:                                                                                                                                                                    
+			f1,f2 = entry[0].split('<-->')                                                                                                                                                             
+	                                                                                                                                                                      
+			m1_ind = np.argwhere(tomtom_data[:,0]==f1)                                                                                                                                                 
+			m2_ind = np.argwhere(tomtom_data[:,0]==f2)                                                                                                                                                 
+			#print(m1_ind,m2_ind)
+			if len(m1_ind) == 0 or len(m2_ind) == 0:
+				continue
+			m1 = tomtom_data[m1_ind[0][0]][1]
+			m2 = tomtom_data[m2_ind[0][0]][1]
+			m1_pval = tomtom_data[m1_ind[0][0]][5]
+			m2_pval = tomtom_data[m2_ind[0][0]][5]
+			final_interactions.append([entry[0],entry[1],m1,m1_pval,m2,m2_pval,entry[2],entry[3],entry[4],entry[5],entry[-2],entry[-1]])
+			#print(entry[-1],m1,m2,entry[0])
+		np.savetxt(Interact_dir+'/interactions_summary_attnLimit-'+str(attnLimit)+'.txt',final_interactions,fmt='%s',delimiter='\t')
+		with open(Interact_dir+'/processed_results_attnLimit-'+str(attnLimit)+'.pckl','wb') as f:
+			pickle.dump([pval_info,res_final_int],f)
+		print("Done for Attention Cutoff Value: ",str(attnLimit))
+
+
+### Global variables ###
+Prob_Attention_All = None
+Prob_Attention_All_neg = None
+Seqs = None
+Seqs_neg = None
+LabelPreds = None
+LabelPreds_neg = None
+Filter_Intr_Attn = None
+Filter_Intr_Attn_neg = None
+Filter_Intr_Pos = None
+Filter_Intr_Pos_neg = None
+Filter_Intr_Keys = None
+tp_pos_dict = None
+#######################
+
 
 # entry point to this module: will do all the processing (will be called from satori.py)
-def infer_intr_attention():
-	pass
+def infer_intr_attention(experiment_blob, params, argSpace):
+	global Prob_Attention_All
+	global Prob_Attention_All_neg
+	global Seqs
+	global Seqs_neg
+	global LabelPreds
+	global LabelPreds_neg
+	global Filter_Intr_Attn
+	global Filter_Intr_Attn_neg
+	global Filter_Intr_Pos
+	global Filter_Intr_Pos_neg
+	global Filter_Intr_Keys
+	global tp_pos_dict
+
+	Prob_Attention_All = experiment_blob['res_test'][3]
+	LabelPreds = experiment_blob['res_test'][4]
+	Seqs = experiment_blob['res_test'][6]
+
+	Interact_dir = output_dir + '/Interactions_Results'
+	if not os.path.exists(Interact_dir):
+	    os.makedirs(Interact_dir)
+	tomtom_data = np.loadtxt(motif_dir+'/tomtom/tomtom.tsv',dtype=str,delimiter='\t')
+	if argSpace.intBackground != None:
+		tomtom_data_neg = np.loadtxt(motif_dir_neg+'/tomtom/tomtom.tsv',dtype=str,delimiter='\t')
+	num_filters = params['CNN_filters']
+	CNNfirstpool = params['CNN_poolsize']
+	sequence_len = len(res_test[6][0][0][1])
+
+	Filter_Intr_Keys = get_intr_filter_keys(num_filters)
+			
+	Filter_Intr_Attn = np.ones((len(Filter_Intr_Keys),numPosExamples))*-1
+	Filter_Intr_Pos = np.ones((len(Filter_Intr_Keys),numPosExamples)).astype(int)*-1
+	tp_pos_dict = {}
+	
+	_ = estimate_interactions(num_filters, params, tomtom_data, motif_dir, verbose = argSpace.verbose, CNNfirstpool = CNNfirstpool, 
+											   sequence_len = sequence_len, pos_score_cutoff = argSpace.scoreCutoff, seq_limit = argSpace.intSeqLimit, attn_cutoff = argSpace.attnCutoff,
+											   for_background = False, numWorkers = argSpace.numWorkers, storeInterCNN = argSpace.storeInterCNN, considerTopHit = argSpace.considerTopHit) #argSpace.intSeqLimit
+	
+	Filter_Intr_Attn_neg = np.ones((len(Filter_Intr_Keys),numNegExamples))*-1
+	Filter_Intr_Pos_neg = np.ones((len(Filter_Intr_Keys),numNegExamples)).astype(int)*-1
+	
+	if argSpace.intBackground == 'negative':
+		_ = estimate_interactions(num_filters, params, tomtom_data_neg, motif_dir_neg, verbose = argSpace.verbose, CNNfirstpool = CNNfirstpool, 
+											   sequence_len = sequence_len, pos_score_cutoff = argSpace.scoreCutoff, seq_limit = argSpace.intSeqLimit, attn_cutoff = argSpace.attnCutoff,
+											   for_background = True, numWorkers = argSpace.numWorkers, storeInterCNN = argSpace.storeInterCNN, considerTopHit = argSpace.considerTopHit) 
+	elif argSpace.intBackground == 'shuffle':
+		Prob_Attention_All_neg = experiment_blob['res_test_bg'][3]
+		LabelPreds_neg = experiment_blob['res_test_bg'][4]
+		Seqs_neg = experiment_blob['res_test_bg'][6]
+		_ = estimate_interactions_bg(num_filters, params, tomtom_data_neg, motif_dir_neg, verbose = argSpace.verbose, CNNfirstpool = CNNfirstpool, 
+											   sequence_len = sequence_len, pos_score_cutoff = argSpace.scoreCutoff, seq_limit = argSpace.intSeqLimit, attn_cutoff = argSpace.attnCutoff,
+											   for_background = True, numWorkers = argSpace.numWorkers, storeInterCNN = argSpace.storeInterCNN, considerTopHit = argSpace.considerTopHit) 
+	with open(Interact_dir+'/interaction_keys_dict.pckl','wb') as f:
+		pickle.dump(Filter_Intr_Keys,f)
+	with open(Interact_dir+'/background_results_raw.pckl','wb') as f:
+		pickle.dump([Filter_Intr_Attn_neg,Filter_Intr_Pos_neg],f)	
+	with open(Interact_dir+'/main_results_raw.pckl','wb') as f:
+		pickle.dump([Filter_Intr_Attn,Filter_Intr_Pos],f)
+	

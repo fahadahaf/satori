@@ -1,44 +1,28 @@
 # TO-DO this is very rough, need to create proper functionality for everything #
 # get rid of word2vec related stuff for now (or keep it for future work?) #
-import gensim
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-import pandas as pd
-import pdb
+#import pdb
 import pickle
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
 
-from argparse import ArgumentParser
-from fastprogress import progress_bar
-from gensim.models import Word2Vec
-from gensim.models.word2vec import LineSentence
+from Bio.SeqUtils import GC
+from captum.attr import IntegratedGradients
+from deeplift.visualization import viz_sequence
 from multiprocessing import Pool
-from random import randint
+from scipy.stats import mannwhitneyu
 from sklearn import metrics
+from statsmodels.stats.multitest import multipletests
 from torch.backends import cudnn
 from torch.utils import data
 from torch.utils.data import Dataset, DataLoader
-from torch.autograd import Variable
-from torch.utils.data.sampler import SubsetRandomSampler
-from torch.autograd import Function # import Function to create custom activations
-from torch.nn.parameter import Parameter # import Parameter to create custom activations with learnable parameters
-from torch import optim # import optimizers for demonstrations
 
 #local imports
 from datasets import DatasetLoadAll, DatasetLazyLoad
 from extract_motifs import get_motif
 from models import AttentionNet
-from utils import get_params_dict, get_popsize_for_interactions
-
-from datetime import datetime
-from deeplift.visualization import viz_sequence
-from captum.attr import IntegratedGradients
-from Bio.SeqUtils import GC
-from sklearn.preprocessing import normalize
+from utils import get_params_dict, get_popsize_for_interactions, get_intr_filter_keys
 
 
 def evaluateRegularBatch(net, batch, criterion, device=None):
@@ -177,22 +161,6 @@ def model_wrapper(inputs, model, targets, TPs):
 	#rx = output * targets
 	#print(rx)
 	return torch.sum(output * targets, dim=0)
-
-
-def get_intr_filter_keys(num_filters=200):
-	Filter_Intr_Keys = {}
-	count_index = 0
-	for i in range(0,num_filters):
-		for j in range(0,num_filters):
-			if i == j:
-				continue
-			intr = 'filter'+str(i)+'<-->'+'filter'+str(j)
-			rev_intr = 'filter'+str(j)+'<-->'+'filter'+str(i)
-			
-			if intr not in Filter_Intr_Keys and rev_intr not in Filter_Intr_Keys:
-				Filter_Intr_Keys[intr] = count_index
-				count_index += 1
-	return Filter_Intr_Keys
 
 
 def process_FIS(experiment_blob, intr_dir, motif_dir, params, argSpace, Filter_Intr_Keys=None, device=None, tp_pos_dict={}, for_background=False):
@@ -428,7 +396,13 @@ def analyze_motif_interactions(argSpace, motif_dir, motif_dir_neg, intr_dir, plo
 	tomtom_data = np.loadtxt(motif_dir+'/tomtom/tomtom.tsv',dtype=str,delimiter='\t')
 	if argSpace.intBackground != None:
 		tomtom_data_neg = np.loadtxt(motif_dir_neg+'/tomtom/tomtom.tsv',dtype=str,delimiter='\t')
-
+	
+	with open(intr_dir+'/interaction_keys_dict.pckl','rb') as f:
+		Filter_Intr_Keys = pickle.load(f)
+	with open(intr_dir+'/main_results_raw.pckl','rb') as f:
+		Filter_Intr_Attn,Filter_Intr_Pos = pickle.load(f)
+	with open(intr_dir+'/background_results_raw.pckl','rb') as f:
+		Filter_Intr_Attn_Bg,Filter_Intr_Pos_Bg = pickle.load(f)
 	if plot_dist:
 		resMain = Filter_Intr_Attn[Filter_Intr_Attn!=-1]                                                                                                                                               
 		resBg = Filter_Intr_Attn_Bg[Filter_Intr_Attn_Bg!=-1]
@@ -472,7 +446,6 @@ def analyze_motif_interactions(argSpace, motif_dir, motif_dir_neg, intr_dir, plo
 		plt.legend(loc='best',fontsize=10)
 		plt.savefig(intr_dir+'/Attn_scores_distributions_MeanPerInteraction.pdf')
 		plt.clf()
-
 
 	#dummy in this case, we are not dropping values based on the attnLimit
 	attnLimits = [0]#[argSpace.attnCutoff * i for i in range(1,11)] #save results for 10 different attention cutoff values (maximum per interaction) eg. [0.05, 0.10, 0.15, 0.20, 0.25, ...]
@@ -538,9 +511,9 @@ def analyze_motif_interactions(argSpace, motif_dir, motif_dir_neg, intr_dir, plo
 			pickle.dump([pval_info,res_final_int],f)
 		print("Done for Attention Cutoff Value: ",str(attnLimit))
 
-	time_taken = [['main_loop','bg_loop','total']]
-	time_taken.append([main_time.total_seconds(),bg_time.total_seconds(),main_time.total_seconds()+bg_time.total_seconds()])
-	np.savetxt(intr_dir+'/timing_stats.txt',time_taken,fmt='%s',delimiter='\t')
+	#time_taken = [['main_loop','bg_loop','total']]
+	#time_taken.append([main_time.total_seconds(),bg_time.total_seconds(),main_time.total_seconds()+bg_time.total_seconds()])
+	#np.savetxt(intr_dir+'/timing_stats.txt',time_taken,fmt='%s',delimiter='\t')
 
 
 # entry point to this module: will do all the processing (will be called from satori.py)
@@ -551,6 +524,6 @@ def infer_intr_FIS(experiment_blob, params, argSpace, device=None):
 	Filter_Intr_Keys = get_intr_filter_keys(params['CNN_filters']) 
 
 	tp_pos_dict = process_FIS(experiment_blob, intr_dir, experiment_blob['motif_dir_pos'], params, argSpace, Filter_Intr_Keys=Filter_Intr_Keys, device=device)
-	_ = process_FIS(experiment_blob, intr_dir, experiment_blob['motif_dir_neg'], params, argSpace, Filter_Intr_Attn=Filter_Intr_Attn, device=device, tp_pos_dict=tp_pos_dict, for_background=True)
+	_ = process_FIS(experiment_blob, intr_dir, experiment_blob['motif_dir_neg'], params, argSpace, Filter_Intr_Keys=Filter_Intr_Keys, device=device, tp_pos_dict=tp_pos_dict, for_background=True)
 	
 	analyze_motif_interactions(argSpace, experiment_blob['motif_dir_pos'], experiment_blob['motif_dir_neg'], intr_dir)

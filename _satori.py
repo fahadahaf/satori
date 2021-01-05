@@ -2672,9 +2672,6 @@ if test_motif_proportions:
 	final_simData = np.asarray(final_simData)
 	pos_dict,neg_dict = get_intr(final_simData)
 #############################################################################################################################		
-	
-  
-    
-	
+
 	
 	

@@ -1,3 +1,34 @@
+# get rid of word2vec related stuff for now (or keep it for future work?) #
+import numpy as np
+import os
+import pandas as pd
+import pdb
+import pickle
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+
+from argparse import ArgumentParser
+from fastprogress import progress_bar
+from gensim.models.word2vec import LineSentence
+from random import randint
+from sklearn import metrics
+from torch.backends import cudnn
+from torch.utils import data
+from torch.utils.data import Dataset, DataLoader
+from torch.autograd import Variable
+from torch.utils.data.sampler import SubsetRandomSampler
+from torch.autograd import Function # import Function to create custom activations
+from torch.nn.parameter import Parameter # import Parameter to create custom activations with learnable parameters
+from torch import optim # import optimizers for demonstrations
+
+#local imports
+from experiment import run_experiment, motif_analysis, get_results_for_shuffled
+from extract_motifs import get_motif
+from models import AttentionNet
+from utils import get_params_dict, get_random_seq
+
 ####################################################################################################################
 ##################################--------------Argument Parsing--------------######################################
 def parseArgs():
@@ -87,7 +118,6 @@ def parseArgs():
     return args
 ####################################################################################################################
 
-
 def main():
     #CUDA for pytorch
     use_cuda = torch.cuda.is_available()
@@ -97,12 +127,24 @@ def main():
     #create params dictionary
     params_dict = get_params_dict(arg_space.hparamfile)
     experiment_blob = run_experiment(device, arg_space, params_dict)
+    output_dir = experiment_blob['output_dir']
     test_resBlob = experiment_blob['res_test']
     CNNWeights = experiment_blob['CNN_weights']
+
+    if arg_space.intBackground == 'shuffle':
+        test_resBlob_bg = get_results_for_shuffled(arg_space, params_dict, test_resBlob['net'], test_resBlob['criterion'], test_resBlob['test_loader'])
+        experiment_blob['res_test_bg'] = test_resBlob_bg
+
     if arg_space.motifAnalysis:
-        motif_dir_pos, _ = motif_analysis(test_resBlob, CNNWeights, arg_space)
-        motif_dir_neg, _ = motif_analysis(test_resBlob, CNNWeights,  arg_space, for_negative=True)
-    
+        motif_dir_pos, _ = motif_analysis(test_resBlob, CNNWeights, arg_space, params_dict)
+        if arg_space.intBackground == 'negative':
+            motif_dir_neg, _ = motif_analysis(test_resBlob, CNNWeights,  arg_space, params_dict, for_background=True)
+        if arg_space.intBackground == 'shuffle':
+            motif_dir_neg, _ = motif_analysis(test_resBlob_bg, CNNWeights, arg_space, params_dict, for_background=True)
+    else:
+        motif_dir_pos = output_dir + '/Motif_Analysis'
+        motif_dir_neg = output_dir + '/Motif_Analysis_Negative'
+
     experiment_blob['motif_dir_pos'] = motif_dir_pos
     experiment_blob['motif_dir_neg'] = motif_dir_neg
 
