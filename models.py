@@ -29,6 +29,14 @@ class PositionalEncoding(nn.Module):
         return self.dropout(x)
 
 
+class Exponential(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x):
+        return torch.exp(x)
+        
+
 class AttentionNet(nn.Module): #for the model that uses CNN, RNN (optionally), and MH attention
     def __init__(self, params, device=None, genPAttn=True, reuseWeightsQK=False):
         super(AttentionNet, self).__init__()
@@ -147,4 +155,7 @@ class AttentionNet(nn.Module): #for the model that uses CNN, RNN (optionally), a
 
         output = self.fc3(output)	
         assert not torch.isnan(output).any()
-        return output,pAttn_concat
+        if self.genPAttn:
+            return output,pAttn_concat
+        else:
+            return output

@@ -3,7 +3,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-#import pdb
+import pdb
 import pickle
 import torch
 
@@ -103,24 +103,16 @@ def get_filters_in_individual_seq(sdata):
 		for k in range(0,len(filter_data),2):
 			hdr = filter_data[k].split('_')[0]
 			if hdr == header:
-				#print(hdr,header)
 				pos = int(filter_data[k].split('_')[-2])
 				act_val = float(filter_data[k].split('_')[-1])
 				pooled_pos = int(pos/CNNfirstpool)
 				key = pos#pooled_pos #we are no longer dealing with attention so lets use the actual position of the filter activation instead
-				#key = 'filter'+str(j)
 				if key not in s_info_dict:
-					#s_info_dict[key] = [(pos,act_val)]
 					s_info_dict[key] = [('filter'+str(j),act_val)]
 				else:
 					if 'filter'+str(j) not in s_info_dict[key][0]:
-					#if pos not in s_info_dict[key][0]:
 						if act_val > s_info_dict[key][0][1]:
-							#s_info_dict[key].append(('filter'+str(j),act_val))
-							#s_info_dict[key] = [(pos,act_val)]#
 							s_info_dict[key] = [('filter'+str(j),act_val)]
-	#print({header: s_info_dict},hdr,header)
-	
 	return {header: s_info_dict}
 
 
@@ -129,23 +121,15 @@ def get_filters_in_seq_dict(all_seqs,motif_dir,num_filters,CNNfirstpool,numWorke
 	for i in range(0,num_filters):
 		filter_data = np.loadtxt(motif_dir+'/filter'+str(i)+'_logo.fa',dtype=str)
 		filter_data_dict['filter'+str(i)] = filter_data
-	
 	seq_info_dict = {}
-	
 	sdata = []
 	for i in range(0,all_seqs.shape[0]):
 		header = all_seqs[i][0]
 		sdata.append([header,num_filters,filter_data_dict,CNNfirstpool])
-	#count = 0
 	with Pool(processes = numWorkers) as pool:
 		result = pool.map(get_filters_in_individual_seq,sdata,chunksize=1)
-		#pdb.set_trace()
-		#count += 1
-		#if count %10 == 0:
-		#	print(count)
 		for subdict in result:
 			seq_info_dict.update(subdict)
-
 	return seq_info_dict
 
 
@@ -164,26 +148,28 @@ def model_wrapper(inputs, model, targets, TPs):
 
 
 def process_FIS(experiment_blob, intr_dir, motif_dir, params, argSpace, Filter_Intr_Keys=None, device=None, tp_pos_dict={}, for_background=False):
+	#pdb.set_trace()
 	criterion = experiment_blob['criterion']
 	train_loader = experiment_blob['train_loader']
 	train_indices = experiment_blob['train_indices']
 	test_loader = experiment_blob['test_loader_bg'] if argSpace.intBackground=='shuffle' else experiment_blob['test_loader'] 
 	net = experiment_blob['net']
+	saved_model_dir = experiment_blob['saved_model_dir']
 	
 	if not os.path.exists(intr_dir):
 		os.makedirs(intr_dir)
 
-	num_labels = argSpace.num_labels
+	num_labels = params['num_classes']
 	pos_score_cutoff = argSpace.scoreCutoff
-	#net = AttentionNet(params, device=device).to(device)
-	# try:    
-	#     checkpoint = torch.load(saved_model_dir+'/model')
-	#     net.load_state_dict(checkpoint['model_state_dict'])
-	#     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-	#     epoch = checkpoint['epoch']
-	#     loss = checkpoint['loss']
-	# except:
-	#     print("No pre-trained model found! Please run with --mode set to train.")
+	net = AttentionNet(params, device=device, genPAttn=False).to(device)
+	try:    
+	    checkpoint = torch.load(saved_model_dir+'/model')
+	    net.load_state_dict(checkpoint['model_state_dict'])
+	    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+	    epoch = checkpoint['epoch']
+	    loss = checkpoint['loss']
+	except:
+	    print("No pre-trained model found! Please run with --mode set to train.")
 
 	model = net.to(device)
 	model.eval()
@@ -206,7 +192,7 @@ def process_FIS(experiment_blob, intr_dir, motif_dir, params, argSpace, Filter_I
 	#GC_content of the train set sequences
 	GC_content = GC(''.join(train_loader.dataset.df_seq_final['sequence'][train_indices].values))/100 #0.46 #argSpace.gcContent
 
-	numPosExamples,numNegExamples = get_popsize_for_interactions(argSpace, experiment_blob['res_test'][3], batchSize)			
+	numPosExamples,numNegExamples = get_popsize_for_interactions(argSpace, experiment_blob['res_test'][4], batchSize)			
 	numExamples = numNegExamples if for_background else numPosExamples
 
 	Filter_Intr_Attn = np.ones((len(Filter_Intr_Keys),numExamples))*-1
@@ -218,9 +204,9 @@ def process_FIS(experiment_blob, intr_dir, motif_dir, params, argSpace, Filter_I
 				break
 
 		if num_labels == 2:
-			res_test = evaluateRegularBatch(net,batch,criterion)
+			res_test = evaluateRegularBatch(net, batch, criterion, device)
 		else:
-			res_test = evaluateRegularBatchMC(net,batch,criterion)
+			res_test = evaluateRegularBatchMC(net, batch, criterion, device)
 		
 		Seqs = res_test[-1]
 		per_batch_labelPreds = res_test[-2]
@@ -419,7 +405,7 @@ def analyze_motif_interactions(argSpace, motif_dir, motif_dir_neg, intr_dir, plo
 		plt.legend(loc='best',fontsize=10)
 		plt.savefig(intr_dir+'/Attn_scores_distributions.pdf')
 		plt.clf()
-
+		#pdb.set_trace()
 		Bg_MaxMean = []
 		Main_MaxMean = []
 		for entry in Filter_Intr_Attn:
@@ -519,7 +505,7 @@ def analyze_motif_interactions(argSpace, motif_dir, motif_dir_neg, intr_dir, plo
 # entry point to this module: will do all the processing (will be called from satori.py)
 def infer_intr_FIS(experiment_blob, params, argSpace, device=None):
 	output_dir = experiment_blob['output_dir']
-	intr_dir = output_dir + '/Interactions'
+	intr_dir = output_dir + '/Interactions_FIS'
 
 	Filter_Intr_Keys = get_intr_filter_keys(params['CNN_filters']) 
 

@@ -377,7 +377,8 @@ def run_experiment(device, arg_space, params):
                 'CNN_weights': CNNWeights,
                 'criterion': criterion,
                 'output_dir': output_dir,
-                'net': net
+                'net': net,
+                'saved_model_dir': saved_model_dir
                }
     return res_blob
 

@@ -564,7 +564,7 @@ def plot_filter_logo(filter_outs, filter_size, seqs, out_prefix, raw_t=0, maxpct
                 incl_kmer = len(kmer) - kmer.count('N')
                 if incl_kmer <filter_size:
                     continue
-                print('%s_%d_%d' % (seqs[i][0],i,j), file = filter_fasta_out)
+                print('%s_%d_%d_%f' % (seqs[i][0],i,j,filter_outs[i,j]), file = filter_fasta_out)
                 print(kmer, file = filter_fasta_out)
                 #print >> filter_fasta_out, '>%s_%d_%d' % (seqs[i][0],i,j)
                 #print >> filter_fasta_out, kmer

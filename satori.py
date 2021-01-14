@@ -27,6 +27,8 @@ from torch import optim # import optimizers for demonstrations
 from experiment import run_experiment, motif_analysis, get_results_for_shuffled
 from extract_motifs import get_motif
 from models import AttentionNet
+from process_attention import infer_intr_attention
+from process_fis import infer_intr_FIS
 from utils import get_params_dict, get_random_seq
 
 ####################################################################################################################
@@ -107,7 +109,7 @@ def parseArgs():
                         help="Batch size used while calculating attributes for FIS scoring. Default is 12.")
     parser.add_argument('--method', dest='methodType', type=str,
                         action='store', default='SATORI',
-                        help="Interaction scoring method to use; options are: SATORI, DFIM, or BOTH. Default is SATORI.")
+                        help="Interaction scoring method to use; options are: SATORI, FIS, or BOTH. Default is SATORI.")
     parser.add_argument('inputprefix', type=str,
                         help="Input file prefix for the bed/text file and the corresponding fasta file (sequences).")
     parser.add_argument('hparamfile',type=str,
@@ -156,7 +158,7 @@ def main():
 
     if arg_space.featInteractions:
         if arg_space.methodType in ['SATORI','BOTH']:
-            _ = infer_intr_attention(experiment_blob, params_dict, arg_space, device)
+            _ = infer_intr_attention(experiment_blob, params_dict, arg_space)
         if arg_space.methodType in ['FIS','BOTH']:
             _ = infer_intr_FIS(experiment_blob, params_dict, arg_space, device)
 
