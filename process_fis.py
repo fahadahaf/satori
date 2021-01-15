@@ -155,13 +155,14 @@ def process_FIS(experiment_blob, intr_dir, motif_dir, params, argSpace, Filter_I
 	test_loader = experiment_blob['test_loader_bg'] if argSpace.intBackground=='shuffle' else experiment_blob['test_loader'] 
 	net = experiment_blob['net']
 	saved_model_dir = experiment_blob['saved_model_dir']
+	optimizer = experiment_blob['optimizer']
 	
 	if not os.path.exists(intr_dir):
 		os.makedirs(intr_dir)
 
-	num_labels = params['num_classes']
+	num_labels = argSpace.numLabels
 	pos_score_cutoff = argSpace.scoreCutoff
-	net = AttentionNet(params, device=device, genPAttn=False).to(device)
+	net = AttentionNet(argSpace, params, device=device, genPAttn=False).to(device)
 	try:    
 	    checkpoint = torch.load(saved_model_dir+'/model')
 	    net.load_state_dict(checkpoint['model_state_dict'])
@@ -169,7 +170,7 @@ def process_FIS(experiment_blob, intr_dir, motif_dir, params, argSpace, Filter_I
 	    epoch = checkpoint['epoch']
 	    loss = checkpoint['loss']
 	except:
-	    print("No pre-trained model found! Please run with --mode set to train.")
+	    raise Exception("No pre-trained model found! Please run with --mode set to train.")
 
 	model = net.to(device)
 	model.eval()
@@ -230,7 +231,7 @@ def process_FIS(experiment_blob, intr_dir, motif_dir, params, argSpace, Filter_I
 						ex_labels = batch_labels[e].astype(int)                                                                                                                                                                     
 						ex_preds = batch_preds[e]                                                                                                                                                                                   
 						ex_preds = np.asarray([i>=0.5 for i in ex_preds]).astype(int)    
-						prec = metrics.precision_score(ex_labels,ex_preds)         
+						prec = metrics.precision_score(ex_labels, ex_preds)         
 						if prec >= argSpace.precisionLimit:   
 							TP = [i for i in range(0,ex_labels.shape[0]) if (ex_labels[i]==1 and ex_preds[i]==1)] #these are going to be used in calculating attributes: average accross only those columns which are true positives                                                                                                                               
 							tp_indices.append(e)
@@ -263,7 +264,7 @@ def process_FIS(experiment_blob, intr_dir, motif_dir, params, argSpace, Filter_I
 			if num_labels == 2:
 				attributions = dl.attribute(test_points, baseline, target=target[i])
 			else:
-				attributions = dl.attribute(test_points, baseline, additional_forward_args=(target[i].unsqueeze(dim=0),TPs[i]))
+				attributions = dl.attribute(test_points, baseline, additional_forward_args=(model, target[i].unsqueeze(dim=0),TPs[i]))
 			res = attributions.squeeze(dim=0).cpu().detach().numpy()
 			#--to visualize and save the attribution across input--#
 			#viz_sequence.plot_weights(res,subticks_frequency=50,figsize=(20,4))
@@ -340,7 +341,7 @@ def process_FIS(experiment_blob, intr_dir, motif_dir, params, argSpace, Filter_I
 				if num_labels == 2:
 					attributions_mut = dl.attribute(tpnt_tuple[start:end],bsln_tuple[start:end],target=trgt_tuple[start:end])
 				else:
-					attributions_mut = dl.attribute(tpnt_tuple[start:end],bsln_tuple[start:end],additional_forward_args=(trgt_tuple[start:end],TPs[i]))
+					attributions_mut = dl.attribute(tpnt_tuple[start:end],bsln_tuple[start:end],additional_forward_args=(model,trgt_tuple[start:end],TPs[i]))
 				count_sbsize = 0
 				for sbsize in range(start,end):
 					intr_tuple_sub = srcPos_info[sbsize][0]

@@ -1,6 +1,13 @@
 import numpy as np
+import os
 import pdb
 import pickle
+import random
+import torch
+
+from Bio.motifs import minimal
+from deeplift_dinuc_shuffle import dinuc_shuffle
+from fastprogress import progress_bar
 from sklearn import metrics
 
 def get_params_dict(params_path):
@@ -28,7 +35,7 @@ def annotate_motifs(annotate_arg, motif_dir):
     ###-----------------Adding TF details to TomTom results----------------###
         try:
             tomtom_res = np.loadtxt(motif_dir+'/tomtom/tomtom.tsv',dtype=str,delimiter='\t')
-        except:
+        except: #shouldn't stop the flow of program if this fails
             print("Error! motif file not found. Make sure to do motif analysis first.")
             return
         if annotate_arg == 'default':
@@ -103,70 +110,75 @@ def get_popsize_for_interactions(argSpace, per_batch_labelPreds, batchSize):
 
 
 def get_intr_filter_keys(num_filters=200):
-	Filter_Intr_Keys = {}
-	count_index = 0
-	for i in range(0,num_filters):
-		for j in range(0,num_filters):
-			if i == j:
-				continue
-			intr = 'filter'+str(i)+'<-->'+'filter'+str(j)
-			rev_intr = 'filter'+str(j)+'<-->'+'filter'+str(i)
-			if intr not in Filter_Intr_Keys and rev_intr not in Filter_Intr_Keys:
-				Filter_Intr_Keys[intr] = count_index
-				count_index += 1
-	return Filter_Intr_Keys
+    Filter_Intr_Keys = {}
+    count_index = 0
+    for i in range(0,num_filters):
+        for j in range(0,num_filters):
+            if i == j:
+                continue
+            intr = 'filter'+str(i)+'<-->'+'filter'+str(j)
+            rev_intr = 'filter'+str(j)+'<-->'+'filter'+str(i)
+            if intr not in Filter_Intr_Keys and rev_intr not in Filter_Intr_Keys:
+                Filter_Intr_Keys[intr] = count_index
+                count_index += 1
+    return Filter_Intr_Keys
 
 
 def get_random_seq(pwm, alphabet=['A','C','G','T']):
-	seq = ''
-	for k in range(0,pwm.shape[0]):
-		nc = np.random.choice(alphabet,1,p=pwm[k,:])
-		seq += nc[0]
-	return seq
+    seq = ''
+    for k in range(0,pwm.shape[0]):
+        nc = np.random.choice(alphabet,1,p=pwm[k,:])
+        seq += nc[0]
+    return seq
 
 
-def get_shuffled_background(tst_loader, argspace): #this function is similar to the first one (get_shuffled_background()) however, instead of using consensus, it generates a random sequences (of same size as the PWM) based on the probability distributions in the matrix
-	labels_array = np.asarray([i for i in range(0,argSpace.numLabels)])
-	final_fa = []
-	final_bed = []
-	for batch_idx, (headers,seqs,_,batch_targets) in enumerate(tst_loader):
-		for i in range (0, len(headers)):
-			header = headers[i]
-			seq = seqs[i]
-			targets = batch_targets[i]
-			dinuc_shuffled_seq = dinuc_shuffle(seq)
-			hdr = header.strip('>').split('(')[0]
-			chrom = hdr.split(':')[0]
-			start,end = hdr.split(':')[1].split('-')
-			final_fa.append([header,seq])
-			if type(targets) == torch.Tensor:
-				targets = targets.cpu().detach().numpy()
-			target = targets.astype(int)
-			labels = ','.join(labels_array[np.where(target==1)].astype(str)) 	
-			final_bed.append([chrom,start,end,'.',labels])
-	final_fa_to_write = []
-	#--load motifs
-	with open(argspace.directory+'/Motif_Analysis/filters_meme.txt') as f:
-		filter_motifs = minimal.read(f)
-	motif_len = filter_motifs[0].length
-	seq_numbers = [i for i in range(0,len(final_bed))]	
-	seq_positions = [i for i in range(0,len(final_fa[0][1])-motif_len)] #can't go beyond end of sequence so have to subtract motif_len
-	for i in progress_bar(range(0, len(filter_motifs))):
-		motif = filter_motifs[i]
-		pwm = np.column_stack((motif.pwm['A'],motif.pwm['C'],motif.pwm['G'],motif.pwm['T']))
-		#consensus = motif.consensus
-		num_occ = motif.num_occurrences
-		random_seqs = random.choices(seq_numbers, k = num_occ) #randomly picking num_occ sequences (note that num_occ can be greater than population in this case since a single sequence can have multile occurence of a filter activation)
-		#print(num_occ, len(seq_positions))
-		random_positions = random.choices(seq_positions, k = num_occ) #randomly pick a position for a motif to occur
-		for seq_index, pos in zip(random_seqs,random_positions):
-			consensus = get_random_seq(pwm) #this will get us a random sequence generated based on the prob distribution of the PWM
-			seq = final_fa[seq_index][1]
-			seq = seq[:pos]+str(consensus)+seq[pos+len(consensus):]
-			final_fa[seq_index][1] = seq
-	out_directory = argspace.directory+'/Temp_Data'
-	if not os.path.exists(out_directory):
-		os.makedirs(out_directory)
-	np.savetxt(out_directory+'/'+'shuffled_background.fa',np.asarray(final_fa).flatten(),fmt='%s')
-	np.savetxt(out_directory+'/'+'shuffled_background.txt',np.asarray(final_bed), fmt='%s',delimiter='\t')
-	return out_directory+'/'+'shuffled_background' #name of the prefix to use
+def get_shuffled_background(tst_loader, argSpace): #this function is similar to the first one (get_shuffled_background()) however, instead of using consensus, it generates a random sequences (of same size as the PWM) based on the probability distributions in the matrix
+    out_directory = argSpace.directory+'/Temp_Data'
+    if os.path.exists(out_directory+'/'+'shuffled_background.txt') and os.path.exists(out_directory+'/'+'shuffled_background.fa'):
+        return out_directory+'/'+'shuffled_background' #name of the prefix to use
+    labels_array = np.asarray([i for i in range(0,argSpace.numLabels)])
+    final_fa = []
+    final_bed = []
+    for batch_idx, (headers,seqs,_,batch_targets) in enumerate(tst_loader):
+        for i in range (0, len(headers)):
+            header = headers[i]
+            seq = seqs[i]
+            targets = batch_targets[i]
+            dinuc_shuffled_seq = dinuc_shuffle(seq)
+            hdr = header.strip('>').split('(')[0]
+            chrom = hdr.split(':')[0]
+            start,end = hdr.split(':')[1].split('-')
+            final_fa.append([header,seq])
+            if type(targets) == torch.Tensor:
+                targets = targets.cpu().detach().numpy()
+            target = targets.astype(int)
+            labels = ','.join(labels_array[np.where(target==1)].astype(str)) 	
+            final_bed.append([chrom,start,end,'.',labels])
+    final_fa_to_write = []
+    #--load motifs
+    try:
+        with open(argSpace.directory+'/Motif_Analysis/filters_meme.txt') as f:
+            filter_motifs = minimal.read(f)
+    except:
+        raise Exception("motif file not found! Make sure to extract motifs first from the network output (hint: use --motifanalysis)")
+    motif_len = filter_motifs[0].length
+    seq_numbers = [i for i in range(0,len(final_bed))]	
+    seq_positions = [i for i in range(0,len(final_fa[0][1])-motif_len)] #can't go beyond end of sequence so have to subtract motif_len
+    for i in progress_bar(range(0, len(filter_motifs))):
+        motif = filter_motifs[i]
+        pwm = np.column_stack((motif.pwm['A'],motif.pwm['C'],motif.pwm['G'],motif.pwm['T']))
+        #consensus = motif.consensus
+        num_occ = motif.num_occurrences
+        random_seqs = random.choices(seq_numbers, k = num_occ) #randomly picking num_occ sequences (note that num_occ can be greater than population in this case since a single sequence can have multile occurence of a filter activation)
+        #print(num_occ, len(seq_positions))
+        random_positions = random.choices(seq_positions, k = num_occ) #randomly pick a position for a motif to occur
+        for seq_index, pos in zip(random_seqs,random_positions):
+            consensus = get_random_seq(pwm) #this will get us a random sequence generated based on the prob distribution of the PWM
+            seq = final_fa[seq_index][1]
+            seq = seq[:pos]+str(consensus)+seq[pos+len(consensus):]
+            final_fa[seq_index][1] = seq
+    if not os.path.exists(out_directory):
+        os.makedirs(out_directory)
+    np.savetxt(out_directory+'/'+'shuffled_background.fa',np.asarray(final_fa).flatten(),fmt='%s')
+    np.savetxt(out_directory+'/'+'shuffled_background.txt',np.asarray(final_bed), fmt='%s',delimiter='\t')
+    return out_directory+'/'+'shuffled_background' #name of the prefix to use

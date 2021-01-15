@@ -19,7 +19,6 @@ use_CNNpool|True|#use CNN pooling
 CNN_poolsize|6|#CNN maxpool size
 CNN_padding|6|#CNN padding, need to be determined based on input length and filter size
 RNN_hiddensize|100|#RNN hidden size
-num_classes|2|#number of classes
 get_CNNout|True|#get first CNN layer output (useful for motif analysis)
 get_seqs|True|#get sequences for the test set examples (useful for motif analysis)
 get_pattn|True|#get Attention value

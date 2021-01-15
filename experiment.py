@@ -29,7 +29,7 @@ from torch import optim # import optimizers for demonstrations
 from datasets import DatasetLoadAll, DatasetLazyLoad
 from extract_motifs import get_motif
 from models import AttentionNet
-from utils import get_params_dict, get_random_seq
+from utils import get_params_dict, get_random_seq, get_shuffled_background
 
 
 ###########################################################################################################################
@@ -228,7 +228,7 @@ def get_indices(dataset_size, test_split, output_dir, shuffle_data=True, seed_va
             test_indices = np.loadtxt(output_dir+'/test_indices.txt', dtype=int)
             train_indices = np.loadtxt(output_dir+'/train_indices.txt', dtype=int)
         except:
-            print("Error! looks like you haven't trained the model yet. Rerun with --mode train.")
+            raise Exception("Error! looks like you haven't trained the model yet. Rerun with --mode train.")
     return train_indices, test_indices, valid_indices
 
 
@@ -248,9 +248,9 @@ def load_datasets(arg_space, batchSize):
         print("test/validation split val: %.2f"%test_split)
 
     if arg_space.deskLoad:
-        final_dataset = DatasetLazyLoad(input_prefix)
+        final_dataset = DatasetLazyLoad(input_prefix, num_labels=arg_space.numLabels)
     else:
-        final_dataset = DatasetLoadAll(input_prefix)
+        final_dataset = DatasetLoadAll(input_prefix, num_labels=arg_space.numLabels)
     #pdb.set_trace()    
     train_indices, test_indices, valid_indices = get_indices(len(final_dataset), test_split, output_dir, mode=arg_space.mode)
     train_sampler = SubsetRandomSampler(train_indices)
@@ -270,7 +270,7 @@ def run_experiment(device, arg_space, params):
         arg_space: ArgParser object containing all the user-specified arguments.
         params: (dict) Dictionary of hyperparameters. 
     """
-    num_labels = params['num_classes']
+    num_labels = arg_space.numLabels
     genPAttn = params['get_pattn']
     getCNNout = params['get_CNNout']
     getSequences = params['get_seqs']
@@ -280,7 +280,7 @@ def run_experiment(device, arg_space, params):
     prefix = 'modelRes' #Using generic, not sure if we need it as an argument or part of the params dict
     train_loader, train_indices, test_loader, test_indices, valid_loader, valid_indices, output_dir = load_datasets(arg_space, batch_size)
     #print(params)
-    net = AttentionNet(params, device=device).to(device)
+    net = AttentionNet(arg_space, params, device=device).to(device)
     if num_labels == 2:
         criterion = nn.CrossEntropyLoss(reduction='mean')
     else:
@@ -331,8 +331,7 @@ def run_experiment(device, arg_space, params):
         epoch = checkpoint['epoch']
         loss = checkpoint['loss']
     except:
-        print(f"No pre-trained model found at {saved_model_dir}! Please run with --mode set to train.")
-        return
+        raise Exception(f"No pre-trained model found at {saved_model_dir}! Please run with --mode set to train.")
 
     if num_labels == 2:
         res_test = evaluateRegular(net, device, test_loader, criterion, output_dir+"/Stored_Values", getPAttn = genPAttn,
@@ -378,15 +377,18 @@ def run_experiment(device, arg_space, params):
                 'criterion': criterion,
                 'output_dir': output_dir,
                 'net': net,
+                'optimizer': optimizer,
                 'saved_model_dir': saved_model_dir
                }
     return res_blob
 
 
-def get_results_for_shuffled(argSpace, params, net, criterion, test_loader):
+def get_results_for_shuffled(argSpace, params, net, criterion, test_loader, device):
     genPAttn = params['get_pattn']
     getCNNout = params['get_CNNout']
     getSequences = params['get_seqs']
+    batchSize = params['batch_size']
+    num_labels = argSpace.numLabels
     output_dir = argSpace.directory
     bg_prefix = get_shuffled_background(test_loader, argSpace)
     if argSpace.deskLoad == True:
@@ -394,7 +396,7 @@ def get_results_for_shuffled(argSpace, params, net, criterion, test_loader):
     else:
         data_bg = DatasetLoadAll(bg_prefix, num_labels)
     test_loader_bg = DataLoader(data_bg, batch_size=batchSize, num_workers=argSpace.numWorkers)
-    if argSpace.num_labels == 2:
+    if num_labels == 2:
         res_test_bg = evaluateRegular(net, device, test_loader_bg, criterion, out_dirc = output_dir+"/Temp_Data/Stored_Values", getPAttn = genPAttn,
                                             storePAttn = argSpace.storeInterCNN, getCNN = getCNNout,
                                             storeCNNout = argSpace.storeInterCNN, getSeqs = getSequences)
@@ -402,7 +404,7 @@ def get_results_for_shuffled(argSpace, params, net, criterion, test_loader):
         res_test_bg = evaluateRegularMC(net, device, test_loader_bg, criterion, out_dirc = output_dir+"/Temp_Data/Stored_Values", getPAttn = genPAttn,
                                             storePAttn = argSpace.storeInterCNN, getCNN = getCNNout,
                                             storeCNNout = argSpace.storeInterCNN, getSeqs = getSequences)
-    return res_test_bg
+    return res_test_bg, test_loader_bg
 
 
 def motif_analysis(res_test, CNNWeights, argSpace, params, for_background = False):
@@ -414,7 +416,7 @@ def motif_analysis(res_test, CNNWeights, argSpace, params, for_background = Fals
         argSpace: The ArgParser object containing values of all the user-specificed arguments.
         for_background: (bool) Determines if the motif analysis is for the positive or the background set.
     """
-    num_labels = params['num_classes']
+    num_labels = argSpace.numLabels
     output_dir = argSpace.directory
     if not os.path.exists(output_dir):
         print("Error! output directory doesn't exist.")

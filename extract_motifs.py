@@ -11,7 +11,7 @@
 #Credits: the following functions are taken from https://github.com/davek44/Basset
 ########################################
 from optparse import OptionParser
-import copy, os, pdb, random, shutil, subprocess, time
+import copy, os, pdb, random, shutil, subprocess, time, gzip
 
 #import h5py
 #import matplotlib
@@ -751,15 +751,4 @@ def get_motif(filter_weights_old, filter_outs, testing, dpath, y = [], index = 0
         os.mkdir(out_dir)
     if index == 0:    
         get_motif_fig(filter_weights, filter_outs, out_dir, testing, sample_i)
-
-
-
-
-################################################################################
-# __main__
-################################################################################
-if __name__ == '__main__':
-    main()
-    #get_motif(model, testing, protein, y, index = 0, dir1 = 'seq_cnn/')
-    #pdb.runcall(main)
 

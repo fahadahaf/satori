@@ -15,18 +15,14 @@ class DatasetLoadAll(Dataset):
         self.df_seq = pd.read_csv(df_path+'.fa',header=None)
         strand = self.df_seq[0][0][-3:] #can be (+) or (.) 
         self.df_all['header'] = self.df_all.apply(lambda x: '>'+x[0]+':'+str(x[1])+'-'+str(x[2])+strand, axis=1)
-        
         self.chroms = self.df_all[0].unique()
         self.df_seq_all = pd.concat([self.df_seq[::2].reset_index(drop=True), self.df_seq[1::2].reset_index(drop=True)], axis=1, sort=False)
         self.df_seq_all.columns = ["header","sequence"]
         #self.df_seq_all['chrom'] = self.df_seq_all['header'].apply(lambda x: x.strip('>').split(':')[0])
         self.df_seq_all['sequence'].apply(lambda x: x.upper())
         self.num_labels = num_labels
-        
         self.df = self.df_all
         self.df_seq_final = self.df_seq_all
-            
-
         self.df = self.df.reset_index()
         self.df_seq_final = self.df_seq_final.reset_index()
         #self.df['header'] = self.df.apply(lambda x: '>'+x[0]+':'+str(x[1])+'-'+str(x[2])+'('+x[5]+')', axis=1)
@@ -88,19 +84,14 @@ class DatasetLazyLoad(Dataset):
         self.df_seq = pd.read_csv(df_path+'.fa',header=None)
         strand = self.df_seq[0][0][-3:] #can be (+) or (.) 
         self.df_all['header'] = self.df_all.apply(lambda x: '>'+x[0]+':'+str(x[1])+'-'+str(x[2])+strand, axis=1)
-
-        
         self.chroms = self.df_all[0].unique()
         self.df_seq_all = pd.concat([self.df_seq[::2].reset_index(drop=True), self.df_seq[1::2].reset_index(drop=True)], axis=1, sort=False)
         self.df_seq_all.columns = ["header","sequence"]
         #self.df_seq_all['chrom'] = self.df_seq_all['header'].apply(lambda x: x.strip('>').split(':')[0])
         self.df_seq_all['sequence'].apply(lambda x: x.upper())
         self.num_labels = num_labels
-        
         self.df = self.df_all
         self.df_seq_final = self.df_seq_all
-            
-
         self.df = self.df.reset_index()
         self.df_seq_final = self.df_seq_final.reset_index()
         #self.df['header'] = self.df.apply(lambda x: '>'+x[0]+':'+str(x[1])+'-'+str(x[2])+'('+x[5]+')', axis=1)

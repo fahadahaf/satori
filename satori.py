@@ -29,7 +29,7 @@ from extract_motifs import get_motif
 from models import AttentionNet
 from process_attention import infer_intr_attention
 from process_fis import infer_intr_FIS
-from utils import get_params_dict, get_random_seq
+from utils import get_params_dict, get_random_seq, annotate_motifs
 
 ####################################################################################################################
 ##################################--------------Argument Parsing--------------######################################
@@ -90,8 +90,8 @@ def parseArgs():
                         action='store', default = 2,
                         help="Number of labels. 2 for binary (default). For multi-class, multi label problem, can be more than 2. ")
     parser.add_argument('--tomtomdist', dest='tomtomDist', type=str,
-                        action='store', default = 'pearson',
-                        help="TomTom distance parameter (pearson, kullback, ed etc). Default is pearson. See TomTom help from MEME suite.")
+                        action='store', default = 'ed',
+                        help="TomTom distance parameter (pearson, kullback, ed etc). Default is euclidean (ed). See TomTom help from MEME suite.")
     parser.add_argument('--tomtompval', dest='tomtomPval', type=float,
                         action='store', default = 0.05,
                         help="Adjusted p-value cutoff from TomTom. Default is 0.05.")
@@ -133,20 +133,21 @@ def main():
     test_resBlob = experiment_blob['res_test']
     CNNWeights = experiment_blob['CNN_weights']
 
-    if arg_space.intBackground == 'shuffle':
-        test_resBlob_bg = get_results_for_shuffled(arg_space, params_dict, test_resBlob['net'], test_resBlob['criterion'], test_resBlob['test_loader'])
-        experiment_blob['res_test_bg'] = test_resBlob_bg
-
     if arg_space.motifAnalysis:
         motif_dir_pos, _ = motif_analysis(test_resBlob, CNNWeights, arg_space, params_dict)
         if arg_space.intBackground == 'negative':
             motif_dir_neg, _ = motif_analysis(test_resBlob, CNNWeights,  arg_space, params_dict, for_background=True)
         if arg_space.intBackground == 'shuffle':
-            motif_dir_neg, _ = motif_analysis(test_resBlob_bg, CNNWeights, arg_space, params_dict, for_background=True)
+            test_resBlob_bg = get_results_for_shuffled(arg_space, params_dict, experiment_blob['net'], experiment_blob['criterion'], experiment_blob['test_loader'], device)
+            experiment_blob['res_test_bg'] = test_resBlob_bg[0]
+            experiment_blob['test_loader_bg'] = test_resBlob_bg[1]
+            motif_dir_neg, _ = motif_analysis(test_resBlob_bg[0], CNNWeights, arg_space, params_dict, for_background=True)
     else:
         motif_dir_pos = output_dir + '/Motif_Analysis'
         motif_dir_neg = output_dir + '/Motif_Analysis_Negative'
-
+    
+    if not os.path.exists(motif_dir_pos) or not os.path.exists(motif_dir_neg):
+        raise Exception("Please extract motifs from the network outputs first (hint: use --motifanalysis)")
     experiment_blob['motif_dir_pos'] = motif_dir_pos
     experiment_blob['motif_dir_neg'] = motif_dir_neg
 
@@ -157,10 +158,14 @@ def main():
         annotate_motifs(arg_space.annotateTomTom, motif_dir_neg)
 
     if arg_space.featInteractions:
+        if arg_space.intBackground == 'shuffle' and not arg_space.motifAnalysis:
+            test_resBlob_bg = get_results_for_shuffled(arg_space, params_dict, experiment_blob['net'], experiment_blob['criterion'], experiment_blob['test_loader'], device)
+            experiment_blob['res_test_bg'] = test_resBlob_bg[0]
+            experiment_blob['test_loader_bg'] = test_resBlob_bg[1]
         if arg_space.methodType in ['SATORI','BOTH']:
-            _ = infer_intr_attention(experiment_blob, params_dict, arg_space)
+            infer_intr_attention(experiment_blob, params_dict, arg_space)
         if arg_space.methodType in ['FIS','BOTH']:
-            _ = infer_intr_FIS(experiment_blob, params_dict, arg_space, device)
+            infer_intr_FIS(experiment_blob, params_dict, arg_space, device)
 
 
 if __name__ == "__main__":

@@ -263,7 +263,7 @@ def estimate_interactions(num_filters, params, tomtom_data, motif_dir, verbose =
 					ex_labels = batch_labels[e].astype(int)                                                                                                                                                                     
 					ex_preds = batch_preds[e]                                                                                                                                                                                   
 					ex_preds = np.asarray([i>=0.5 for i in ex_preds]).astype(int)    
-					prec = metrics.precision_score(ex_labels,ex_preds)         
+					prec = metrics.precision_score(ex_labels, ex_preds)         
 					if prec >= precisionLimit:   
 						TP = [i for i in range(0,ex_labels.shape[0]) if (ex_labels[i]==1 and ex_preds[i]==1)] #these are going to be used in calculating attributes: average accross only those columns which are true positives                                                                                                                               
 						tp_indices.append(e)
@@ -346,7 +346,7 @@ def estimate_interactions_bg(num_filters, params, tomtom_data, motif_dir, verbos
 						TPs[h_i] = tp_pos_dict[header]
 		Seqs_tp = Seqs_neg[k][tp_indices]
 		print('Generating sequence position information...')
-		seq_info_dict = get_filters_in_seq_dict(Seqs_tp,motif_dir_neg,num_filters,CNNfirstpool,numWorkers=numWorkers)
+		seq_info_dict = get_filters_in_seq_dict(Seqs_tp,motif_dir,num_filters,CNNfirstpool,numWorkers=numWorkers)
 		print('Done!')
 
 		fdata = []
@@ -536,7 +536,7 @@ def infer_intr_attention(experiment_blob, params, argSpace):
 	CNNfirstpool = params['CNN_poolsize']
 	batchSize = params['batch_size']
 	sequence_len = len(Seqs[0][0][1])
-	num_labels = params['num_classes']
+	num_labels = argSpace.numLabels
 
 	Filter_Intr_Keys = get_intr_filter_keys(num_filters)
 	numPosExamples,numNegExamples = get_popsize_for_interactions(argSpace, experiment_blob['res_test'][4], batchSize)
