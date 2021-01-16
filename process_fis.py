@@ -152,7 +152,10 @@ def process_FIS(experiment_blob, intr_dir, motif_dir, params, argSpace, Filter_I
 	criterion = experiment_blob['criterion']
 	train_loader = experiment_blob['train_loader']
 	train_indices = experiment_blob['train_indices']
-	test_loader = experiment_blob['test_loader_bg'] if argSpace.intBackground=='shuffle' else experiment_blob['test_loader'] 
+	if for_background:
+		test_loader = experiment_blob['test_loader_bg'] if argSpace.intBackground=='shuffle' else experiment_blob['test_loader']
+	else:
+		test_loader =  experiment_blob['test_loader']
 	net = experiment_blob['net']
 	saved_model_dir = experiment_blob['saved_model_dir']
 	optimizer = experiment_blob['optimizer']
