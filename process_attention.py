@@ -66,23 +66,15 @@ def get_filters_in_seq_dict(all_seqs,motif_dir,num_filters,CNNfirstpool,numWorke
 	for i in range(0,num_filters):
 		filter_data = np.loadtxt(motif_dir+'/filter'+str(i)+'_logo.fa',dtype=str)
 		filter_data_dict['filter'+str(i)] = filter_data
-	
 	seq_info_dict = {}
-	
 	sdata = []
 	for i in range(0,all_seqs.shape[0]):
 		header = all_seqs[i][0]
 		sdata.append([header,num_filters,filter_data_dict,CNNfirstpool])
-	#count = 0
 	with Pool(processes = numWorkers) as pool:
 		result = pool.map(get_filters_in_individual_seq,sdata,chunksize=1)
-		#pdb.set_trace()
-		#count += 1
-		#if count %10 == 0:
-		#	print(count)
 		for subdict in result:
 			seq_info_dict.update(subdict)
-
 	return seq_info_dict
 
 
@@ -231,7 +223,8 @@ def estimate_interactions(num_filters, params, tomtom_data, motif_dir, verbose =
 	global tp_pos_dict
 	
 	final_all = [['Batch','ExNo','SeqHeader','SingleHeadNo','PositionA','PositionB','AveragePosDiff','AttnScore','PositionAInfo','PositionBInfo']]
-	count = 0		
+	count = 0
+	seq_info_dict_list = []		
 	for k in range(0,len(Prob_Attention_All)): #going through all batches
 		start_time = time.time()
 		if count == seq_limit: #break if seq_limit number of sequences tested
@@ -273,6 +266,7 @@ def estimate_interactions(num_filters, params, tomtom_data, motif_dir, verbose =
 		Seqs_tp = Seqs[k][tp_indices]
 		print('generating sequence position information...')
 		seq_info_dict = get_filters_in_seq_dict(Seqs_tp,motif_dir,num_filters,CNNfirstpool,numWorkers=numWorkers)
+		seq_info_dict_list.append([seq_info_dict, tp_indices])
 		print('Done!')
 
 		fdata = []
@@ -300,7 +294,7 @@ def estimate_interactions(num_filters, params, tomtom_data, motif_dir, verbose =
 			print("Done for Batch: ",k, "Sequences Done: ",count, "Time Taken: %d seconds"%round(end_time-start_time))
 				#print("Done for batch: ",k, "example: ",ex, "count: ",count)
 	pop_size = count * params['num_multiheads'] #* int(np.ceil(attn_cutoff)) #total sequences tested x # multi heads x number of top attn scores allowed
-	return pop_size
+	return seq_info_dict_list
 
 
 def estimate_interactions_bg(num_filters, params, tomtom_data, motif_dir, verbose = False, CNNfirstpool = 6, sequence_len = 200, pos_score_cutoff = 0.65, seq_limit = -1, attn_cutoff = 0.25, for_background = False, numWorkers=1, storeInterCNN = True, considerTopHit = True, useAll=False):
@@ -312,6 +306,7 @@ def estimate_interactions_bg(num_filters, params, tomtom_data, motif_dir, verbos
 	global Filter_Intr_Keys
 	global tp_pos_dict
 	
+	seq_info_dict_list = []
 	final_all = [['Batch','ExNo','SeqHeader','SingleHeadNo','PositionA','PositionB','AveragePosDiff','AttnScore','PositionAInfo','PositionBInfo']]
 	count = 0		
 	for k in range(0,len(Prob_Attention_All_neg)): #going through all batches
@@ -347,6 +342,7 @@ def estimate_interactions_bg(num_filters, params, tomtom_data, motif_dir, verbos
 		Seqs_tp = Seqs_neg[k][tp_indices]
 		print('Generating sequence position information...')
 		seq_info_dict = get_filters_in_seq_dict(Seqs_tp,motif_dir,num_filters,CNNfirstpool,numWorkers=numWorkers)
+		seq_info_dict_list.append([seq_info_dict, tp_indices])
 		print('Done!')
 
 		fdata = []
@@ -369,7 +365,7 @@ def estimate_interactions_bg(num_filters, params, tomtom_data, motif_dir, verbos
 		if verbose:	
 			print("Done for Batch: ",k, "Sequences Done: ",count, "Time Taken: %d seconds"%round(end_time-start_time))
 	pop_size = count * params['num_multiheads'] #* int(np.ceil(attn_cutoff)) #total sequences tested x # multi heads x number of top attn scores allowed
-	return pop_size
+	return seq_info_dict_list
 
 
 # a function that can be used to process the interactions, generate plots and other stuff
@@ -545,7 +541,7 @@ def infer_intr_attention(experiment_blob, params, argSpace):
 	Filter_Intr_Pos = np.ones((len(Filter_Intr_Keys),numPosExamples)).astype(int)*-1
 	tp_pos_dict = {}
 	
-	_ = estimate_interactions(num_filters, params, tomtom_data, motif_dir_pos, verbose = argSpace.verbose, CNNfirstpool = CNNfirstpool, 
+	seq_info_dict_list = estimate_interactions(num_filters, params, tomtom_data, motif_dir_pos, verbose = argSpace.verbose, CNNfirstpool = CNNfirstpool, 
 											   sequence_len = sequence_len, pos_score_cutoff = argSpace.scoreCutoff, seq_limit = argSpace.intSeqLimit, attn_cutoff = argSpace.attnCutoff,
 											   for_background = False, numWorkers = argSpace.numWorkers, storeInterCNN = argSpace.storeInterCNN, considerTopHit = True, useAll=argSpace.useAll, precisionLimit=argSpace.precisionLimit) #considerTopHit never used but kept for future use
 	
@@ -553,22 +549,22 @@ def infer_intr_attention(experiment_blob, params, argSpace):
 	Filter_Intr_Pos_neg = np.ones((len(Filter_Intr_Keys),numNegExamples)).astype(int)*-1
 	
 	if argSpace.intBackground == 'negative':
-		_ = estimate_interactions(num_filters, params, tomtom_data_neg, motif_dir_neg, verbose = argSpace.verbose, CNNfirstpool = CNNfirstpool, 
+		seq_info_dict_list_neg = estimate_interactions(num_filters, params, tomtom_data_neg, motif_dir_neg, verbose = argSpace.verbose, CNNfirstpool = CNNfirstpool, 
 											   sequence_len = sequence_len, pos_score_cutoff = argSpace.scoreCutoff, seq_limit = argSpace.intSeqLimit, attn_cutoff = argSpace.attnCutoff,
 											   for_background = True, numWorkers = argSpace.numWorkers, storeInterCNN = argSpace.storeInterCNN, considerTopHit = True) 
 	elif argSpace.intBackground == 'shuffle':
 		Prob_Attention_All_neg = experiment_blob['res_test_bg'][3]
 		LabelPreds_neg = experiment_blob['res_test_bg'][4]
 		Seqs_neg = experiment_blob['res_test_bg'][6]
-		_ = estimate_interactions_bg(num_filters, params, tomtom_data_neg, motif_dir_neg, verbose = argSpace.verbose, CNNfirstpool = CNNfirstpool, 
+		seq_info_dict_list_neg = estimate_interactions_bg(num_filters, params, tomtom_data_neg, motif_dir_neg, verbose = argSpace.verbose, CNNfirstpool = CNNfirstpool, 
 											   sequence_len = sequence_len, pos_score_cutoff = argSpace.scoreCutoff, seq_limit = argSpace.intSeqLimit, attn_cutoff = argSpace.attnCutoff,
 											   for_background = True, numWorkers = argSpace.numWorkers, storeInterCNN = argSpace.storeInterCNN, considerTopHit = True) 
 	with open(Interact_dir+'/interaction_keys_dict.pckl','wb') as f:
 		pickle.dump(Filter_Intr_Keys,f)
 	with open(Interact_dir+'/background_results_raw.pckl','wb') as f:
-		pickle.dump([Filter_Intr_Attn_neg,Filter_Intr_Pos_neg],f)	
+		pickle.dump([Filter_Intr_Attn_neg,Filter_Intr_Pos_neg, seq_info_dict_list_neg],f)	
 	with open(Interact_dir+'/main_results_raw.pckl','wb') as f:
-		pickle.dump([Filter_Intr_Attn,Filter_Intr_Pos],f)
+		pickle.dump([Filter_Intr_Attn,Filter_Intr_Pos, seq_info_dict_list],f)
 	
 	analyze_interactions(argSpace, Interact_dir, tomtom_data)
 	
