@@ -1,35 +1,14 @@
-# get rid of word2vec related stuff for now (or keep it for future work?) #
-import numpy as np
 import os
-import pandas as pd
-import pdb
-import pickle
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
 
 from argparse import ArgumentParser
-from fastprogress import progress_bar
-from gensim.models.word2vec import LineSentence
-from random import randint
-from sklearn import metrics
 from torch.backends import cudnn
-from torch.utils import data
-from torch.utils.data import Dataset, DataLoader
-from torch.autograd import Variable
-from torch.utils.data.sampler import SubsetRandomSampler
-from torch.autograd import Function # import Function to create custom activations
-from torch.nn.parameter import Parameter # import Parameter to create custom activations with learnable parameters
-from torch import optim # import optimizers for demonstrations
 
 #local imports
 from experiment import run_experiment, motif_analysis, get_results_for_shuffled
-from extract_motifs import get_motif
-from models import AttentionNet
 from process_attention import infer_intr_attention
 from process_fis import infer_intr_FIS
-from utils import get_params_dict, get_random_seq, annotate_motifs
+from utils import get_params_dict, annotate_motifs
 
 ####################################################################################################################
 ##################################--------------Argument Parsing--------------######################################

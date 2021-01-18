@@ -1,35 +1,21 @@
-# get rid of word2vec related stuff for now (or keep it for future work?) #
-import gensim
 import numpy as np
 import os
-import pandas as pd
-import pdb
 import pickle
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
-from argparse import ArgumentParser
 from fastprogress import progress_bar
-from gensim.models import Word2Vec
-from gensim.models.word2vec import LineSentence
-from random import randint
 from sklearn import metrics
-from torch.backends import cudnn
-from torch.utils import data
-from torch.utils.data import Dataset, DataLoader
-from torch.autograd import Variable
+from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
-from torch.autograd import Function # import Function to create custom activations
-from torch.nn.parameter import Parameter # import Parameter to create custom activations with learnable parameters
-from torch import optim # import optimizers for demonstrations
 
 #local imports
 from datasets import DatasetLoadAll, DatasetLazyLoad
 from extract_motifs import get_motif
 from models import AttentionNet
-from utils import get_params_dict, get_random_seq, get_shuffled_background
+from utils import get_shuffled_background
 
 
 ###########################################################################################################################
@@ -42,7 +28,6 @@ def trainRegularMC(model, device, iterator, optimizer, criterion):
     all_labels = []
     all_preds = []
     count = 0
-    #pdb.set_trace()
     for batch_idx, (headers, seqs, data, target) in enumerate(iterator):
         data, target = data.to(device,dtype=torch.float), target.to(device,dtype=torch.float)
         optimizer.zero_grad()
@@ -69,7 +54,6 @@ def trainRegular(model, device, iterator, optimizer, criterion):
     running_loss = 0.0
     train_auc = []
     for batch_idx, (headers, seqs, data, target) in enumerate(iterator):
-        #pdb.set_trace()
         data, target = data.to(device,dtype=torch.float), target.to(device,dtype=torch.long)
         optimizer.zero_grad()
         outputs,_ = model(data)
@@ -250,8 +234,7 @@ def load_datasets(arg_space, batchSize):
     if arg_space.deskLoad:
         final_dataset = DatasetLazyLoad(input_prefix, num_labels=arg_space.numLabels)
     else:
-        final_dataset = DatasetLoadAll(input_prefix, num_labels=arg_space.numLabels)
-    #pdb.set_trace()    
+        final_dataset = DatasetLoadAll(input_prefix, num_labels=arg_space.numLabels) 
     train_indices, test_indices, valid_indices = get_indices(len(final_dataset), test_split, output_dir, mode=arg_space.mode)
     train_sampler = SubsetRandomSampler(train_indices)
     test_sampler = SubsetRandomSampler(test_indices)

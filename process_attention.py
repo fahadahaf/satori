@@ -1,45 +1,17 @@
-import numpy as np
-import os
-
-# get rid of word2vec related stuff for now (or keep it for future work?) #
-import gensim
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-import pandas as pd
 import pdb
 import pickle
 import time
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
 
-from argparse import ArgumentParser
-from fastprogress import progress_bar
-from gensim.models import Word2Vec
-from gensim.models.word2vec import LineSentence
 from multiprocessing import Pool
-from random import randint
 from scipy.stats import mannwhitneyu
 from sklearn import metrics
 from statsmodels.stats.multitest import multipletests
-from torch.backends import cudnn
-from torch.utils import data
-from torch.utils.data import Dataset, DataLoader
-from torch.autograd import Variable
-from torch.utils.data.sampler import SubsetRandomSampler
-from torch.autograd import Function # import Function to create custom activations
-from torch.nn.parameter import Parameter # import Parameter to create custom activations with learnable parameters
-from torch import optim # import optimizers for demonstrations
 
 #local imports
-from datasets import DatasetLoadAll, DatasetLazyLoad
-from extract_motifs import get_motif
-from models import AttentionNet
-from utils import get_params_dict, get_random_seq
-
-from utils import get_params_dict, get_popsize_for_interactions, get_intr_filter_keys
+from utils import get_popsize_for_interactions, get_intr_filter_keys
 
 
 def get_filters_in_individual_seq(sdata):
@@ -109,7 +81,6 @@ def score_individual_head(data):
 		if i not in seq_inf_dict:
 			continue
 		for j in range(0, attn_mat.shape[1]):
-			#pdb.set_trace()
 			if j not in seq_inf_dict:
 				continue
 			if i==j:
@@ -176,7 +147,6 @@ def score_individual_head_bg(data):
 		if i not in seq_inf_dict:
 			continue
 		for j in range(0, attn_mat.shape[1]):
-			#pdb.set_trace()
 			if j not in seq_inf_dict:
 				continue
 			if i==j:
@@ -279,7 +249,6 @@ def estimate_interactions(num_filters, params, tomtom_data, motif_dir, verbose =
 
 		with Pool(processes = numWorkers) as pool:
 			result = pool.map(score_individual_head, fdata, chunksize=1)
-		#pdb.set_trace()
 		for element in result:
 			bid = element[0]
 			if for_background == False:

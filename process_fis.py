@@ -1,9 +1,6 @@
-# TO-DO this is very rough, need to create proper functionality for everything #
-# get rid of word2vec related stuff for now (or keep it for future work?) #
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-import pdb
 import pickle
 import torch
 
@@ -16,13 +13,10 @@ from sklearn import metrics
 from statsmodels.stats.multitest import multipletests
 from torch.backends import cudnn
 from torch.utils import data
-from torch.utils.data import Dataset, DataLoader
 
 #local imports
-from datasets import DatasetLoadAll, DatasetLazyLoad
-from extract_motifs import get_motif
 from models import AttentionNet
-from utils import get_params_dict, get_popsize_for_interactions, get_intr_filter_keys
+from utils import get_popsize_for_interactions, get_intr_filter_keys
 
 
 def evaluateRegularBatch(net, batch, criterion, device=None):
@@ -148,7 +142,6 @@ def model_wrapper(inputs, model, targets, TPs):
 
 
 def process_FIS(experiment_blob, intr_dir, motif_dir, params, argSpace, Filter_Intr_Keys=None, device=None, tp_pos_dict={}, for_background=False):
-	#pdb.set_trace()
 	criterion = experiment_blob['criterion']
 	train_loader = experiment_blob['train_loader']
 	train_indices = experiment_blob['train_indices']
@@ -409,7 +402,6 @@ def analyze_motif_interactions(argSpace, motif_dir, motif_dir_neg, intr_dir, plo
 		plt.legend(loc='best',fontsize=10)
 		plt.savefig(intr_dir+'/Attn_scores_distributions.pdf')
 		plt.clf()
-		#pdb.set_trace()
 		Bg_MaxMean = []
 		Main_MaxMean = []
 		for entry in Filter_Intr_Attn:
