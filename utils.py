@@ -8,6 +8,7 @@ from deeplift_dinuc_shuffle import dinuc_shuffle
 from fastprogress import progress_bar
 from sklearn import metrics
 
+
 def get_params_dict(params_path):
     param_data = np.loadtxt(params_path, dtype=str, delimiter='|')
     params = {}
@@ -21,9 +22,7 @@ def get_params_dict(params_path):
                 params[entry[0]] = int(entry[1])
             except:
                 params[entry[0]] = entry[1]    
-    
     return params
-
 def calculate_padding(inputLength, filterSize):
     padding = inputLength - (inputLength - filterSize + 1)
     return int(padding/2) #appended to both sides the half of what is needed
