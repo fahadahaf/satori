@@ -47,9 +47,6 @@ def parseArgs():
                         help="Search CNN motifs against known TF database. Default is Human CISBP TFs.", default=None)
     parser.add_argument('--annotate',dest='annotateTomTom',type=str,action='store',
                         default=None, help="Annotate tomtom motifs. The value of this variable should be path to the database file used for annotation. Default is None.")                   
-    parser.add_argument('-a','--attnfigs', dest='attnFigs',
-                        action='store_true', default=False,
-                        help="Generate Attention (matrix) figures for every test example.")
     parser.add_argument('-i','--interactions', dest='featInteractions',
                         action='store_true', default=False,
                         help="Self attention based feature(TF) interactions analysis.")
