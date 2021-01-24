@@ -11,7 +11,7 @@
 #Credits: the following functions are taken from https://github.com/davek44/Basset
 ########################################
 from optparse import OptionParser
-import copy, os, pdb, random, shutil, subprocess, time, gzip
+import copy, os, random, shutil, subprocess, time, gzip
 
 #import h5py
 #import matplotlib
@@ -602,7 +602,6 @@ def get_motif_fig(filter_weights, filter_outs, out_dir, seqs, sample_i = 0):
     global fw
     print ('plot motif fig', out_dir)
     #seqs, seq_targets = get_seq_targets(protein)
-    #pdb.set_trace()
     num_filters = filter_weights.shape[0]
     filter_size = filter_weights.shape[2]
     if embedding:
@@ -611,7 +610,6 @@ def get_motif_fig(filter_weights, filter_outs, out_dir, seqs, sample_i = 0):
     
     
     
-    #pdb.set_trace()
     #################################################################
     # individual filter plots
     #################################################################
@@ -729,7 +727,6 @@ def get_motif(filter_weights_old, filter_outs, testing, dpath, y = [], index = 0
     stride=s
     tomtom_dir=tomtom
     print (filter_weights_old.shape)
-    #pdb.set_trace()
     filter_weights = []
     for x in filter_weights_old:
         #normalized, scale = preprocess_data(x)
@@ -739,9 +736,7 @@ def get_motif(filter_weights_old, filter_outs, testing, dpath, y = [], index = 0
         filter_weights.append(x)
         
     filter_weights = np.array(filter_weights)
-    #pdb.set_trace()
     #filter_outs = get_feature(model, testing, index)
-    #pdb.set_trace()
     
     #sample_i = np.array(random.sample(xrange(testing.shape[0]), 500))
     sample_i =0

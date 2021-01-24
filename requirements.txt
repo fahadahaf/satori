@@ -1,0 +1,11 @@
+biopython
+captum
+fastprogress
+matplotlib
+numpy
+pandas
+scikit-learn
+scipy
+seaborn
+statsmodels
+torch

@@ -6,7 +6,6 @@ import torch
 
 from Bio.SeqUtils import GC
 from captum.attr import IntegratedGradients
-from deeplift.visualization import viz_sequence
 from multiprocessing import Pool
 from scipy.stats import mannwhitneyu
 from sklearn import metrics
@@ -263,7 +262,8 @@ def process_FIS(experiment_blob, intr_dir, motif_dir, params, argSpace, Filter_I
 				attributions = dl.attribute(test_points, baseline, additional_forward_args=(model, target[i].unsqueeze(dim=0),TPs[i]))
 			res = attributions.squeeze(dim=0).cpu().detach().numpy()
 			#--to visualize and save the attribution across input--#
-			#viz_sequence.plot_weights(res,subticks_frequency=50,figsize=(20,4))
+			# from deeplift.visualization import viz_sequence
+			# viz_sequence.plot_weights(res,subticks_frequency=50,figsize=(20,4))
 			#plt.savefig('somefile.png')
 			#------------------------------------------------------#
 
