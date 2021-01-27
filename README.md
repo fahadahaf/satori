@@ -2,7 +2,7 @@
 **SATORI** is **S**elf-**AT**tenti**O**n based deep learning model to capture **R**egulatory element **I**nteractions in genomic sequences. It can be used to infer a global landscape of interactions in a given genomic dataset, without a computationally-expensive post-processing step.
 
 ## Dependency
-**SATORI** is written in python 3. The following python packages are required:
+**SATORI** is written in python 3. The following python packages are required:  
 [biopython (version 1.75)](https://biopython.org)  
 [captum (version 0.2.0)](https://captum.ai)
 [fastprogress (version 0.1.21)](https://github.com/fastai/fastprogress)  
@@ -15,6 +15,6 @@
 [seaborn (version 0.9.0)](https://seaborn.pydata.org)
 [statsmodels (version 0.9.0)](http://www.statsmodels.org/stable/index.html)  
 
-and for motif analysis:
+and for motif analysis:  
 [MEME suite](http://meme-suite.org/doc/download.html)  
 [WebLogo](https://weblogo.berkeley.edu)
