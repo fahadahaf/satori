@@ -132,7 +132,7 @@ optional arguments:
                         SATORI, FIS, or BOTH. Default is SATORI.
 ```
 
-## Usage Example
+## Tutorial
 ### Pre-processing
 TO-DO
 
