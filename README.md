@@ -19,6 +19,21 @@ and for motif analysis:
 [MEME suite](http://meme-suite.org/doc/download.html)  
 [WebLogo](https://weblogo.berkeley.edu)
 
+## Installation
+1. Download SATORI (via git clone):
+```
+git clone git@github.com:fahadahaf/satori_v2.git satori
+```
+2. Navigate to the cloned directory:
+```
+cd satori
+```
+3. Install SATORI:
+```
+python setup.py install
+```
+We recommend adding this directory to the PATH environment variable.
+
 ## Usage
 ```
 usage: satori.py [-h] [-v] [-o DIRECTORY] [-m MODE] [--deskload]
