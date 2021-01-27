@@ -130,6 +130,15 @@ optional arguments:
 ```
 
 ## Usage Example
+### Pre-processing
+TO-DO
+
+### Example: binary classification
+
+### Example: multi-label classification
+
+### Post-processing
+TO-DO
 
 ## Manuscript
 SATORI manuscript is [available](https://www.biorxiv.org/content/10.1101/2020.01.31.927996v2) on bioRxiv.
