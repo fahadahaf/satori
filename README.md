@@ -32,6 +32,10 @@ cd satori
 ```
 python setup.py install
 ```
+4. Make the main script (satori.py) executable:
+```
+chmod +x satori.py
+```
 We recommend adding this directory to the PATH environment variable.
 
 ## Usage
