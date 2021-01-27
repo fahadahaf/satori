@@ -1,0 +1,26 @@
+input_channels|4|#number of original input channels (for DNA = 4)
+use_embeddings|False|#Use embeddings if True otherwise use one-hot encoded input
+embd_window|5|#embedding window size
+embd_size|50|#embedding size word2vec model
+embd_kmersize|3|#size of kmer in word2vec model
+num_multiheads|8|#numMultiHeads
+singlehead_size|32|#SingleHeadSize
+multihead_size|100|#MultiHeadSize
+use_pooling|False|#Use pooling at single head level
+pooling_val|6|#if use pooling at single head level, size of pooling
+readout_strategy|normalize|#read out layer type/strategy
+use_RNN|True|#use RNN in the model
+use_CNN|True|#use CNN layer
+CNN1_useexponential|False|#use Exponential function as an activation in the first CNN layer (ReLU is used if False)
+use_posEnc|False|#use positional encoding
+CNN_filters|200|#number of CNN layer filters
+CNN_filtersize|13|#size of the CNN filter
+use_CNNpool|True|#use CNN pooling
+CNN_poolsize|6|#CNN maxpool size
+CNN_padding|6|#CNN padding, need to be determined based on input length and filter size
+RNN_hiddensize|100|#RNN hidden size
+get_CNNout|True|#get first CNN layer output (useful for motif analysis)
+get_seqs|True|#get sequences for the test set examples (useful for motif analysis)
+get_pattn|True|#get Attention values
+batch_size|256|#batch size
+num_epochs|50|#number of epochs
