@@ -20,7 +20,7 @@ def parseArgs():
     a : argparse.ArgumentParser
     
     """
-    parser = ArgumentParser(description='Main deepSAMIREI script.')
+    parser = ArgumentParser(description='Main SATORI script.')
     parser.add_argument('-v', '--verbose', dest='verbose', action='store_true', 
                         default=False, help="verbose output [default is quiet running]")
     parser.add_argument('-o','--outDir', dest='directory', type=str,
