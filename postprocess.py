@@ -73,7 +73,7 @@ def plot_frequent_interactions(df, intr_level='TF_Interaction', first_n=15, colo
     plt.plot()
 
 
-def plot_interactions_and_distances_boxplot(dfx, first_n=20, sort_distances=False, tick_fontsize=14, label_fontsize=19, add_sub_caption=True, show_mean_dist=True, store_pdf_path=None):
+def plot_interactions_and_distances_boxplot(dfx, first_n=20, sort_distances=False, tick_fontsize=14, label_fontsize=19, add_sub_caption=True, show_mean_dist=True, store_pdf_path=None, dist_color='salmon', cap_pos=[0.5,-0.79]):
     df = dfx.copy()
     res = df['TF_Interaction'].value_counts()[:first_n]
     list_distance = df.groupby('TF_Interaction')['mean_distance'].apply(list)[res.index]
@@ -84,7 +84,7 @@ def plot_interactions_and_distances_boxplot(dfx, first_n=20, sort_distances=Fals
     if sort_distances:
         df_distance.sort_values(by='mean_distance', inplace=True)
     fig, axes = plt.subplots(1, 2)
-    ax1 = res.plot(kind='bar', color='salmon', figsize=(18,5), fontsize=tick_fontsize, ax=axes[0])
+    ax1 = res.plot(kind='bar', color=dist_color, figsize=(18,5), fontsize=tick_fontsize, ax=axes[0])
     ax1.set_xlabel("motif interaction",fontsize=label_fontsize)
     ax1.set_ylabel("# of occurences",fontsize=label_fontsize)
     ax1.xaxis.set_tick_params(rotation=90)
@@ -96,9 +96,9 @@ def plot_interactions_and_distances_boxplot(dfx, first_n=20, sort_distances=Fals
     ax2.tick_params(axis='x', labelsize=tick_fontsize)
     ax2.tick_params(axis='y', labelsize=tick_fontsize)
     if add_sub_caption:
-        ax1.text(0.5,-0.69, "(a)", size=23, ha="center", 
+        ax1.text(cap_pos[0], cap_pos[1], "(a)", size=23, ha="center", 
                 transform=ax1.transAxes)
-        ax2.text(0.5,-0.69, "(b)", size=23, ha="center", 
+        ax2.text(cap_pos[0], cap_pos[1], "(b)", size=23, ha="center", 
                 transform=ax2.transAxes)
     if show_mean_dist:
         ax2.axhline(y=mean_dist, xmin=0.0, xmax=1.0, color='steelblue', ls='--', lw=1.5)
@@ -107,23 +107,23 @@ def plot_interactions_and_distances_boxplot(dfx, first_n=20, sort_distances=Fals
     plt.show()
 
 
-def plot_interactions_and_distances_histogram(dfx, first_n=20, dist_nbins=25, tick_fontsize=14, label_fontsize=19, add_sub_caption=True, show_mean_dist=True, store_pdf_path=None):
+def plot_interactions_and_distances_histogram(dfx, first_n=20, dist_nbins=25, tick_fontsize=14, label_fontsize=19, add_sub_caption=True, show_mean_dist=True, store_pdf_path=None, dist_colors=['salmon', 'cadetblue'], cap_pos=[0.5,-0.79]):
     df = dfx.copy()
     res = df['TF_Interaction'].value_counts()[:first_n]
     mean_dist = df['mean_distance'].mean()
     fig, axes = plt.subplots(1, 2)
-    ax1 = res.plot(kind='bar', color='salmon', figsize=(18,5), fontsize=tick_fontsize, ax=axes[0])
+    ax1 = res.plot(kind='bar', color=dist_colors[0], figsize=(18,5), fontsize=tick_fontsize, ax=axes[0])
     ax1.set_xlabel("motif interaction",fontsize=label_fontsize)
     ax1.set_ylabel("# of occurences",fontsize=label_fontsize)
     ax1.xaxis.set_tick_params(rotation=90)
-    ax2 = df['mean_distance'].plot(kind='hist',bins=dist_nbins, figsize=(18,5), color='cadetblue', fontsize=tick_fontsize, ax=axes[1])
+    ax2 = df['mean_distance'].plot(kind='hist',bins=dist_nbins, figsize=(18,5), color=dist_colors[1], fontsize=tick_fontsize, ax=axes[1])
     ax2.set_xlabel("interaction distance",fontsize=label_fontsize)
     ax2.set_ylabel("frequency",fontsize=label_fontsize)
     ax2.xaxis.set_tick_params(rotation=0)
     if add_sub_caption:
-        ax1.text(0.5,-0.69, "(a)", size=23, ha="center", 
+        ax1.text(cap_pos[0], cap_pos[1], "(a)", size=23, ha="center", 
                 transform=ax1.transAxes)
-        ax2.text(0.5,-0.69, "(b)", size=23, ha="center", 
+        ax2.text(cap_pos[0], cap_pos[1], "(b)", size=23, ha="center", 
                 transform=ax2.transAxes)
     if show_mean_dist:
         ax2.axvline(x=mean_dist, ymin=0.0, ymax=1.0, color='indianred', ls='--', lw=1.5)
