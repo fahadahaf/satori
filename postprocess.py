@@ -1,3 +1,4 @@
+import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -148,3 +149,72 @@ def db_annotate_interaction(x, intr_dict = None):
                 return 1 #interaction found (the two TFs have shared targets)
     return 0
 
+
+def preprocess_for_comparison(dfx, annotation_df=None, for_arabidopsis=False, m1_pval=0.05, m2_pval=0.05):
+    df = filter_data_on_thresholds(dfx.copy(), motifA_pval_cutoff=m1_pval, motifB_pval_cutoff=m2_pval)
+    #--------------- For the TFs ----------------#
+    if annotation_df is not None:
+        df['TF1'] = df['motif1'].apply(get_annotation, annotation_data=annotation_df, single_TF=True)
+        df['TF2'] = df['motif2'].apply(get_annotation, annotation_data=annotation_df, single_TF=True)
+    else:
+        if for_arabidopsis:
+            df['TF1'] = df['motif1'].apply(lambda x: x.split('_')[1].strip('.tnt'))
+            df['TF2'] = df['motif2'].apply(lambda x: x.split('_')[1].strip('.tnt'))
+        else:
+            df['TF1'] = df['motif1']
+            df['TF2'] = df['motif2']
+    df['TF_Interaction'] = df.apply(lambda x: x['TF1']+r'$\longleftrightarrow$'+x['TF2'], axis=1)
+    df = df[df['TF1']!=df['TF2']]
+    df = df.reset_index(drop=True)
+    df = process_for_redundant_interactions(df, intr_type='TF')
+    #--------------- For the families ----------------#
+    if annotation_df is not None:
+        tf_family_dict = {}
+        for TF in annotation_df['TF_Name']:
+            tf_family_dict[TF] = annotation_df[annotation_df['TF_Name']==TF]['Family_Name'].iloc[0]
+        df['TF1_Family'] = df['TF1'].apply(lambda x: tf_family_dict[x] if x in tf_family_dict else 'UNKNOWN')
+        df['TF2_Family'] = df['TF2'].apply(lambda x: tf_family_dict[x] if x in tf_family_dict else 'UNKNOWN')
+    else:
+        if for_arabidopsis:
+            df['TF1_Family'] = df['motif1'].apply(lambda x: x.split('_')[0])
+            df['TF2_Family'] = df['motif2'].apply(lambda x: x.split('_')[0])
+        else:
+            print("Warning! Cannot infer motif families, please provide an annotation reference (see arguments).")
+            df['TF1_Family'] = df['TF1'].apply(lambda x: x+'_Family')
+            df['TF2_Family'] = df['TF2'].apply(lambda x: x+'_Family')
+    df['Family_Interaction'] = df.apply(lambda x: x['TF1_Family']+r'$\longleftrightarrow$'+x['TF2_Family'],axis=1)
+    df = process_for_redundant_interactions(df, intr_type='Family')
+    return df
+
+
+def get_comparison_stats(DFIM, ATTN, intr_type='TF_interaction'):
+    DFIM_unique = DFIM[intr_type].value_counts()
+    ATTN_unique = ATTN[intr_type].value_counts()
+    intersected = set.intersection(set(DFIM_unique.keys()),set(ATTN_unique.keys()))
+    return ATTN_unique, DFIM_unique, intersected
+
+
+def common_interaction_stats(df_method1, df_method2):
+    final_list = [['interaction','count','in_both']]
+    for key in df_method1.keys():
+        rev_key = key.split('$\\longleftrightarrow$')[1]+'$\\longleftrightarrow$'+key.split('$\\longleftrightarrow$')[0]
+        if key in df_method2 or rev_key in df_method2:
+            final_list.append([key,df_method1[key],'b'])
+        else:
+            final_list.append([key,df_method1[key],'r'])
+    final_list = np.asarray(final_list)
+    df_res = pd.DataFrame(final_list[1:],columns=final_list[0])   
+    df_res['count'] = df_res['count'].apply(lambda x: int(x))
+    return df_res
+
+
+def plot_interaction_comparison(df_comp, first_n=15, xlabel='TF interaction', store_pdf_path=None, fig_size=(9,6), alpha=0.6):
+    ax = df_comp[:first_n].plot(kind='bar', x='interaction', y='count', color=df_comp['in_both'], figsize=fig_size, legend=False, alpha=alpha, fontsize=12)
+    ax.set_xlabel("TF interaction",fontsize=16)
+    ax.set_ylabel("# of occurences",fontsize=16)
+    NA = mpatches.Patch(color='b', alpha = alpha, label='In both')
+    EU = mpatches.Patch(color='r', alpha = alpha, label='FIS only')
+    plt.legend(handles=[NA,EU], loc=1,fontsize=14)
+    if store_pdf_path:
+        plt.savefig(store_pdf_path, bbox_inches='tight') # eg. 'SATORI-vs-FIS_human_indTF.pdf' for filename
+    plt.show()

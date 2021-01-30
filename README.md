@@ -139,12 +139,12 @@ TO-DO
 ### Example: binary classification
 For the TAL-GATA experiment:  
 ```
-satori.py Data/TAL-GATA/Final_dataset_combined_uniq_neg80k_binaryFeat ModelParam/CNN-RNN-MH-noEmbds_hyperParams.txt -w 8 --outDir Results/TAL-GATA_Analysis --mode train -v -s --background negative --intseqlimit 5000 --numlabels 2 --motifanalysis --interactions --method BOTH --attrbatchsize 18 --deskload --tomtompath PATH-TO-TOMTOM-TOOL --database PATH-TO-MEME-TF-DATABASE --annotate No
+satori.py Data/TAL-GATA/Final_dataset_combined_uniq_neg80k_binaryFeat ModelsParam/CNN-RNN-MH-noEmbds_hyperParams.txt -w 8 --outDir Results/TAL-GATA_Analysis --mode train -v -s --background negative --intseqlimit 5000 --numlabels 2 --motifanalysis --interactions --method BOTH --attrbatchsize 18 --deskload --tomtompath PATH-TO-TOMTOM-TOOL --database PATH-TO-MEME-TF-DATABASE
 ```
 ### Example: multi-label classification
 For the arabidopsis genomewide chromatin accessibility dataset:  
 ```
-satori.py Data/Arabidopsis/atAll_m200_s600 ModelParam/CNN-RNN-MH-noEmbds_hyperParams.txt -w 8 --outDir Results/Arabidopsis_GenomeWide_Analysis --mode train -v -s --background shuffle --intseqlimit 5000 --numlabels 36 --motifanalysis --interactions --method BOTH --attrbatchsize 32 --deskload --tomtompath PATH-TO-TOMTOM-TOOL --database PATH-TO-MEME-TF-DATABASE --annotate No
+satori.py Data/Arabidopsis/atAll_m200_s600 ModelsParam/CNN-RNN-MH-noEmbds_hyperParams.txt -w 8 --outDir Results/Arabidopsis_GenomeWide_Analysis --mode train -v -s --background shuffle --intseqlimit 5000 --numlabels 36 --motifanalysis --interactions --method BOTH --attrbatchsize 32 --deskload --tomtompath PATH-TO-TOMTOM-TOOL --database PATH-TO-MEME-TF-DATABASE
 ```
 **Note:** make sure to specify path to the TomTom tool and the corresponding motif database.  
 ```PATH-TO-TOMTOM-TOOL``` path to TomTom tool in the MEME suite.  
