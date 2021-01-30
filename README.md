@@ -151,4 +151,4 @@ satori.py Data/Arabidopsis/atAll_m200_s600 ModelsParam/CNN-RNN-MH-noEmbds_hyperP
 ```PATH-TO-MEME-TF-DATABASE``` path to the TF database to use (MEME suite comes with different databases).
 
 ### Post-processing
-TO-DO
+The resutls are processed in separate Jupyter notebooks in the `Analysis` directory.
