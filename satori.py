@@ -55,7 +55,10 @@ def parseArgs():
                         help="Background used in interaction analysis: shuffle (for di-nucleotide shuffled sequences with embedded motifs.), negative (for negative test set). Default is not to use background (and significance test).")
     parser.add_argument('--attncutoff', dest='attnCutoff', type=float,
                         action='store', default=0.04,
-                        help="Attention (probability) cutoff value to use while searching for maximum interaction. A value (say K) greater than 1.0 will mean using top K interaction values.") #In human promoter DHSs data analysis, lowering the cutoff leads to more TF interactions. 
+                        help="Attention cutoff value. For a given interaction, it should have an attention value at least as high as this value across all examples.") #In human promoter DHSs data analysis, lowering the cutoff leads to more TF interactions. 
+    parser.add_argument('--fiscutoff', dest='fisCutoff', type=float,
+                        action='store', default=0,
+                        help="FIS score cutoff value. For a given interaction, it should have an FIS score at least as high as this value across all examples.") 
     parser.add_argument('--intseqlimit', dest='intSeqLimit', type=int,
                         action='store', default = -1,
                         help="A limit on number of input sequences to test. Default is -1 (use all input sequences that qualify).")

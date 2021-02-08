@@ -202,7 +202,7 @@ def process_FIS(experiment_blob, intr_dir, params, argSpace, Filter_Intr_Keys=No
 		per_batch_labelPreds = res_test[-2]
 		headers,seqs,datapoints,target = batch
 		if num_labels == 2:
-			if for_background and argSpace.intBackground != None:
+			if for_background:
 				tp_indices = [i for i in range(0,per_batch_labelPreds.shape[0]) if (per_batch_labelPreds[i][0]==0 and per_batch_labelPreds[i][1]<(1-pos_score_cutoff))]
 			else:
 				tp_indices = [i for i in range(0,per_batch_labelPreds.shape[0]) if (per_batch_labelPreds[i][0]==1 and per_batch_labelPreds[i][1]>pos_score_cutoff)]
@@ -423,9 +423,7 @@ def analyze_motif_interactions(argSpace, motif_dir, motif_dir_neg, intr_dir, plo
 		plt.savefig(intr_dir+'/Attn_scores_distributions_MeanPerInteraction.pdf')
 		plt.clf()
 
-	#dummy in this case, we are not dropping values based on the attnLimit
-	attnLimits = [0]#[argSpace.attnCutoff * i for i in range(1,11)] #save results for 10 different attention cutoff values (maximum per interaction) eg. [0.05, 0.10, 0.15, 0.20, 0.25, ...]
-
+	attnLimits = [argSpace.fisCutoff] if argSpace.fisCutoff==0 else [0, argSpace.fisCutoff]
 	for attnLimit in attnLimits:
 		pval_info = []#{}
 		for i in range(0,Filter_Intr_Attn.shape[0]):                                                                                                                                                   
@@ -498,9 +496,10 @@ def infer_intr_FIS(experiment_blob, params, argSpace, device=None):
 	output_dir = experiment_blob['output_dir']
 	intr_dir = output_dir + '/Interactions_FIS'
 
-	Filter_Intr_Keys = get_intr_filter_keys(params['CNN_filters']) 
+	if not os.path.exists(intr_dir+'/interaction_keys_dict.pckl'):
+		Filter_Intr_Keys = get_intr_filter_keys(params['CNN_filters']) 
+	if not os.path.exists(intr_dir+'/main_results_raw.pckl'):
+		tp_pos_dict = process_FIS(experiment_blob, intr_dir, params, argSpace, Filter_Intr_Keys=Filter_Intr_Keys, device=device)
+		_ = process_FIS(experiment_blob, intr_dir, params, argSpace, Filter_Intr_Keys=Filter_Intr_Keys, device=device, tp_pos_dict=tp_pos_dict, for_background=True)
 
-	tp_pos_dict = process_FIS(experiment_blob, intr_dir, params, argSpace, Filter_Intr_Keys=Filter_Intr_Keys, device=device)
-	_ = process_FIS(experiment_blob, intr_dir, params, argSpace, Filter_Intr_Keys=Filter_Intr_Keys, device=device, tp_pos_dict=tp_pos_dict, for_background=True)
-	
 	analyze_motif_interactions(argSpace, experiment_blob['motif_dir_pos'], experiment_blob['motif_dir_neg'], intr_dir)

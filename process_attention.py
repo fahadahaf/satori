@@ -53,8 +53,8 @@ def score_individual_head(data):
 	count,header,seq_inf_dict,k,ex,params,tomtom_data,attn_cutoff,sequence_len,CNNfirstpool,num_filters,motif_dir,feat_size,storeInterCNN,considerTopHit = data
 	#print(k,ex)
 	global Prob_Attention_All# = res_test[3]
-	global Seqs# = res_test[6]
-	global LabelPreds# = res_test[4]
+	#global Seqs# = res_test[6]
+	#global LabelPreds# = res_test[4]
 	#global Filter_Intr_Attn
 	#global Filter_Intr_Pos
 	global Filter_Intr_Keys
@@ -121,8 +121,8 @@ def score_individual_head_bg(data):
 	count,header,seq_inf_dict,k,ex,params,tomtom_data,attn_cutoff,sequence_len,CNNfirstpool,num_filters,motif_dir,feat_size,storeInterCNN,considerTopHit = data
 	
 	global Prob_Attention_All_neg# = res_test[3]
-	global Seqs_neg# = res_test[6]
-	global LabelPreds_neg# = res_test[4]
+	#global Seqs_neg# = res_test[6]
+	#global LabelPreds_neg# = res_test[4]
 	#global Filter_Intr_Attn
 	#global Filter_Intr_Pos
 	global Filter_Intr_Keys
@@ -208,7 +208,7 @@ def estimate_interactions(num_filters, params, tomtom_data, motif_dir, verbose =
 		per_batch_labelPreds = LabelPreds[k]
 		
 		if num_labels == 2:
-			if for_background and for_background != None:
+			if for_background:
 				tp_indices = [i for i in range(0,per_batch_labelPreds.shape[0]) if (per_batch_labelPreds[i][0]==0 and per_batch_labelPreds[i][1]<(1-pos_score_cutoff))]
 			else:
 				tp_indices = [i for i in range(0,per_batch_labelPreds.shape[0]) if (per_batch_labelPreds[i][0]==1 and per_batch_labelPreds[i][1]>pos_score_cutoff)]
@@ -384,7 +384,8 @@ def analyze_interactions(argSpace, Interact_dir, tomtom_data, plot_dist=True):
 		plt.savefig(Interact_dir+'/Attn_scores_distributions_MeanPerInteraction.pdf')
 		plt.clf()
 	
-	attnLimits = [0.01, 0.02, 0.03] + [argSpace.attnCutoff * i for i in range(1,11)] #save results for 10 different attention cutoff values (maximum per interaction) eg. [0.05, 0.10, 0.15, 0.20, 0.25, ...]
+	#attnLimits = [0.01, 0.02, 0.03] + [argSpace.attnCutoff * i for i in range(1,11)] #save results for 10 different attention cutoff values (maximum per interaction) eg. [0.05, 0.10, 0.15, 0.20, 0.25, ...]
+	attnLimits = [argSpace.attnCutoff] if argSpace.attnCutoff==0.12 else [0.12, argSpace.attnCutoff]
 	for attnLimit in attnLimits:
 		pval_info = []#{}
 		for i in range(0,Filter_Intr_Attn.shape[0]):                                                                                                                                                   
@@ -502,6 +503,16 @@ def infer_intr_attention(experiment_blob, params, argSpace):
 	sequence_len = len(Seqs[0][0][1])
 	num_labels = argSpace.numLabels
 
+	if os.path.exists(Interact_dir+'/background_results_raw.pckl'):
+		with open(Interact_dir+'/interaction_keys_dict.pckl','rb') as f:
+			Filter_Intr_Keys = pickle.load(f)
+		with open(Interact_dir+'/background_results_raw.pckl','rb') as f:
+			Filter_Intr_Attn_neg,Filter_Intr_Pos_neg, seq_info_dict_list_neg = pickle.load(f)	
+		with open(Interact_dir+'/main_results_raw.pckl','rb') as f:
+			Filter_Intr_Attn,Filter_Intr_Pos, seq_info_dict_list = pickle.load(f)
+		analyze_interactions(argSpace, Interact_dir, tomtom_data)
+		return
+		
 	Filter_Intr_Keys = get_intr_filter_keys(num_filters)
 	numPosExamples,numNegExamples = get_popsize_for_interactions(argSpace, experiment_blob['res_test'][4], batchSize)
 
