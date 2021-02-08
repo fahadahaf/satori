@@ -35,7 +35,7 @@ def annotate_motifs(annotate_arg, motif_dir):
         except: #shouldn't stop the flow of program if this fails
             print("Error! motif file not found. Make sure to do motif analysis first.")
             return
-        if annotate_arg == 'default':
+        if annotate_arg == 'default':#this for now makes sure that we don't annotate (will be added in future).
             database = np.loadtxt('../../Basset_Splicing_IR-iDiffIR/Analysis_For_none_network-typeB_lotus_posThresh-0.60/MEME_analysis/Homo_sapiens_2019_01_14_4_17_pm/TF_Information_all_motifs.txt',dtype=str,delimiter='\t')
         else:
             database = np.loadtxt(annotate_arg, dtype=str, delimiter='\t')
@@ -131,8 +131,11 @@ def get_random_seq(pwm, alphabet=['A','C','G','T']):
 
 def get_shuffled_background(tst_loader, argSpace): #this function is similar to the first one (get_shuffled_background()) however, instead of using consensus, it generates a random sequences (of same size as the PWM) based on the probability distributions in the matrix
     out_directory = argSpace.directory+'/Temp_Data'
-    if os.path.exists(out_directory+'/'+'shuffled_background.txt') and os.path.exists(out_directory+'/'+'shuffled_background.fa'):
-        return out_directory+'/'+'shuffled_background' #name of the prefix to use
+    if argSpace.mode == 'test':
+        if os.path.exists(out_directory+'/'+'shuffled_background.txt') and os.path.exists(out_directory+'/'+'shuffled_background.fa'):
+            return out_directory+'/'+'shuffled_background' #name of the prefix to use
+        else:
+            print("Shuffled data missing! Regenerating...")
     labels_array = np.asarray([i for i in range(0,argSpace.numLabels)])
     final_fa = []
     final_bed = []
@@ -141,7 +144,7 @@ def get_shuffled_background(tst_loader, argSpace): #this function is similar to 
             header = headers[i]
             seq = seqs[i]
             targets = batch_targets[i]
-            dinuc_shuffled_seq = dinuc_shuffle(seq)
+            seq = dinuc_shuffle(seq)
             hdr = header.strip('>').split('(')[0]
             chrom = hdr.split(':')[0]
             start,end = hdr.split(':')[1].split('-')

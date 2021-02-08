@@ -384,7 +384,7 @@ def analyze_interactions(argSpace, Interact_dir, tomtom_data, plot_dist=True):
 		plt.savefig(Interact_dir+'/Attn_scores_distributions_MeanPerInteraction.pdf')
 		plt.clf()
 	
-	attnLimits = [argSpace.attnCutoff * i for i in range(1,11)] #save results for 10 different attention cutoff values (maximum per interaction) eg. [0.05, 0.10, 0.15, 0.20, 0.25, ...]
+	attnLimits = [0.01, 0.02, 0.03] + [argSpace.attnCutoff * i for i in range(1,11)] #save results for 10 different attention cutoff values (maximum per interaction) eg. [0.05, 0.10, 0.15, 0.20, 0.25, ...]
 	for attnLimit in attnLimits:
 		pval_info = []#{}
 		for i in range(0,Filter_Intr_Attn.shape[0]):                                                                                                                                                   

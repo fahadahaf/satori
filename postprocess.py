@@ -18,7 +18,7 @@ def get_annotation(motif, annotation_data=None, single_TF=False):
     TF_A = annotation_data[annotation_data['Motif_ID']==motif]['TF_Name']
     TF_A = list(TF_A)
     if single_TF:
-        return TF_A[0]
+        return TF_A[0] if len(TF_A)!=0 else 'UNKNOWN'
     else:
         return ','.join(TF_A)
 

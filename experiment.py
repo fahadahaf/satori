@@ -200,7 +200,7 @@ def get_indices(dataset_size, test_split, output_dir, shuffle_data=True, seed_va
     if shuffle_data:
         np.random.seed(seed_val)
         np.random.shuffle(indices)
-    train_indices, test_indices, valid_indices = indices[2*split_val:], indices[:split_val], indices[split_val:2*split_val]
+    train_indices, test_indices, valid_indices = np.array(indices[2*split_val:]), np.array(indices[:split_val]), np.array(indices[split_val:2*split_val])
     #--save indices for later use, when testing for example---#
     if mode=='train':
         np.savetxt(output_dir+'/valid_indices.txt', valid_indices, fmt='%s')

@@ -11,7 +11,6 @@ from scipy.stats import mannwhitneyu
 from sklearn import metrics
 from statsmodels.stats.multitest import multipletests
 from torch.backends import cudnn
-from torch.utils import data
 
 #local imports
 from models import AttentionNet
@@ -140,7 +139,8 @@ def model_wrapper(inputs, model, targets, TPs):
 	return torch.sum(output * targets, dim=0)
 
 
-def process_FIS(experiment_blob, intr_dir, motif_dir, params, argSpace, Filter_Intr_Keys=None, device=None, tp_pos_dict={}, for_background=False):
+def process_FIS(experiment_blob, intr_dir, params, argSpace, Filter_Intr_Keys=None, device=None, tp_pos_dict={}, for_background=False):
+	motif_dir = experiment_blob['motif_dir_neg'] if for_background else experiment_blob['motif_dir_pos']
 	criterion = experiment_blob['criterion']
 	train_loader = experiment_blob['train_loader']
 	train_indices = experiment_blob['train_indices']
@@ -148,7 +148,6 @@ def process_FIS(experiment_blob, intr_dir, motif_dir, params, argSpace, Filter_I
 		test_loader = experiment_blob['test_loader_bg'] if argSpace.intBackground=='shuffle' else experiment_blob['test_loader']
 	else:
 		test_loader =  experiment_blob['test_loader']
-	net = experiment_blob['net']
 	saved_model_dir = experiment_blob['saved_model_dir']
 	optimizer = experiment_blob['optimizer']
 	
@@ -176,11 +175,6 @@ def process_FIS(experiment_blob, intr_dir, motif_dir, params, argSpace, Filter_I
 	else:
 		dl = IntegratedGradients(model_wrapper)
 
-	######-------------------------Some Notes---------------------------############
-	#1. For a single position, I am selecting filter with the highest activation
-	#   This is different than SATORI since there I considered all filters.
-	#   I am doing this to reduce the overhead while calculating all interactions
-	################################################################################
 	num_filters = params['CNN_filters']
 	CNNfirstpool = params['CNN_poolsize'] 
 	CNNfiltersize = params['CNN_filtersize']
@@ -259,7 +253,7 @@ def process_FIS(experiment_blob, intr_dir, motif_dir, params, argSpace, Filter_I
 			if num_labels == 2:
 				attributions = dl.attribute(test_points, baseline, target=target[i])
 			else:
-				attributions = dl.attribute(test_points, baseline, additional_forward_args=(model, target[i].unsqueeze(dim=0),TPs[i]))
+				attributions = dl.attribute(test_points, baseline, additional_forward_args=(model, target[i].unsqueeze(dim=0), TPs[i]))
 			res = attributions.squeeze(dim=0).cpu().detach().numpy()
 			#--to visualize and save the attribution across input--#
 			# from deeplift.visualization import viz_sequence
@@ -500,12 +494,13 @@ def analyze_motif_interactions(argSpace, motif_dir, motif_dir_neg, intr_dir, plo
 
 # entry point to this module: will do all the processing (will be called from satori.py)
 def infer_intr_FIS(experiment_blob, params, argSpace, device=None):
+	#pdb.set_trace()
 	output_dir = experiment_blob['output_dir']
 	intr_dir = output_dir + '/Interactions_FIS'
 
 	Filter_Intr_Keys = get_intr_filter_keys(params['CNN_filters']) 
 
-	tp_pos_dict = process_FIS(experiment_blob, intr_dir, experiment_blob['motif_dir_pos'], params, argSpace, Filter_Intr_Keys=Filter_Intr_Keys, device=device)
-	_ = process_FIS(experiment_blob, intr_dir, experiment_blob['motif_dir_neg'], params, argSpace, Filter_Intr_Keys=Filter_Intr_Keys, device=device, tp_pos_dict=tp_pos_dict, for_background=True)
+	tp_pos_dict = process_FIS(experiment_blob, intr_dir, params, argSpace, Filter_Intr_Keys=Filter_Intr_Keys, device=device)
+	_ = process_FIS(experiment_blob, intr_dir, params, argSpace, Filter_Intr_Keys=Filter_Intr_Keys, device=device, tp_pos_dict=tp_pos_dict, for_background=True)
 	
 	analyze_motif_interactions(argSpace, experiment_blob['motif_dir_pos'], experiment_blob['motif_dir_neg'], intr_dir)
