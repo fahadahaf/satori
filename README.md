@@ -48,9 +48,10 @@ usage: satori.py [-h] [-v] [-o DIRECTORY] [-m MODE] [--deskload]
                  [--scorecutoff SCORECUTOFF] [--tomtompath TOMTOMPATH]
                  [--database TFDATABASE] [--annotate ANNOTATETOMTOM] [-i]
                  [-b INTBACKGROUND] [--attncutoff ATTNCUTOFF]
-                 [--intseqlimit INTSEQLIMIT] [-s] [--numlabels NUMLABELS]
-                 [--tomtomdist TOMTOMDIST] [--tomtompval TOMTOMPVAL]
-                 [--testall] [--useall] [--precisionlimit PRECISIONLIMIT]
+                 [--fiscutoff FISCUTOFF] [--intseqlimit INTSEQLIMIT] [-s]
+                 [--numlabels NUMLABELS] [--tomtomdist TOMTOMDIST]
+                 [--tomtompval TOMTOMPVAL] [--testall] [--useall]
+                 [--precisionlimit PRECISIONLIMIT]
                  [--attrbatchsize ATTRBATCHSIZE] [--method METHODTYPE]
                  inputprefix hparamfile
 
@@ -99,10 +100,13 @@ optional arguments:
                         motifs.), negative (for negative test set). Default is
                         not to use background (and significance test).
   --attncutoff ATTNCUTOFF
-                        Attention (probability) cutoff value to use while
-                        searching for maximum interaction. A value (say K)
-                        greater than 1.0 will mean using top K interaction
-                        values.
+                        Attention cutoff value. For a given interaction, it
+                        should have an attention value at least as high as
+                        this value across all examples.
+  --fiscutoff FISCUTOFF
+                        FIS score cutoff value. For a given interaction, it
+                        should have an FIS score at least as high as this
+                        value across all examples.
   --intseqlimit INTSEQLIMIT
                         A limit on number of input sequences to test. Default
                         is -1 (use all input sequences that qualify).
@@ -151,4 +155,4 @@ satori.py Data/Arabidopsis/atAll_m200_s600 ModelsParam/CNN-RNN-MH-noEmbds_hyperP
 ```PATH-TO-MEME-TF-DATABASE``` path to the TF database to use (MEME suite comes with different databases).
 
 ### Post-processing
-The resutls are processed in separate Jupyter notebooks in the `Analysis` directory.
+The resutls are processed in separate Jupyter notebooks in the `Analysis` directory. The notebooks assume that the results are in ``Results`` folder, at the root (top level) directory of the repository.
