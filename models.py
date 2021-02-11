@@ -112,7 +112,10 @@ class AttentionNet(nn.Module): #for the model that uses CNN, RNN (optionally), a
         #based on: https://nlp.seas.harvard.edu/2018/04/03/attention.html
         d_k = query.size(-1)
         scores = torch.matmul(query, key.transpose(-2, -1)) / math.sqrt(d_k)
-        p_attn = F.softmax(scores, dim = -1)
+        p_attn_pos = F.softmax(scores, dim = -1)
+        p_attn_neg = F.softmin(scores, dim = -1)
+        p_attn = (p_attn_pos + p_attn_neg)/2
+        #p_attn = F.softmax(scores, dim= -1)
         p_attn = F.dropout(p_attn, p=dropout, training=self.training)
         return torch.matmul(p_attn, value), p_attn
 
