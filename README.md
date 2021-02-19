@@ -143,16 +143,16 @@ TO-DO
 ### Example: binary classification
 For the TAL-GATA experiment:  
 ```
-satori.py Data/TAL-GATA/Final_dataset_combined_uniq_neg80k_binaryFeat ModelsParam/CNN-RNN-MH-noEmbds_hyperParams.txt -w 8 --outDir Results/TAL-GATA_Analysis --mode train -v -s --background negative --intseqlimit 5000 --numlabels 2 --motifanalysis --interactions --method BOTH --attrbatchsize 18 --deskload --tomtompath PATH-TO-TOMTOM-TOOL --database PATH-TO-MEME-TF-DATABASE
+satori.py Data/TAL-GATA/Final_dataset_combined_uniq_neg80k_binaryFeat ModelsParam/CNN-RNN-MH-noEmbds_hyperParams.txt -w 8 --outDir results/TAL-GATA_Analysis --mode train -v -s --background negative --intseqlimit 5000 --numlabels 2 --motifanalysis --interactions --method BOTH --attrbatchsize 18 --deskload --tomtompath PATH-TO-TOMTOM-TOOL --database PATH-TO-MEME-TF-DATABASE
 ```
 ### Example: multi-label classification
 For the arabidopsis genomewide chromatin accessibility dataset:  
 ```
-satori.py Data/Arabidopsis/atAll_m200_s600 ModelsParam/CNN-RNN-MH-noEmbds_hyperParams.txt -w 8 --outDir Results/Arabidopsis_GenomeWide_Analysis --mode train -v -s --background shuffle --intseqlimit 5000 --numlabels 36 --motifanalysis --interactions --method BOTH --attrbatchsize 32 --deskload --tomtompath PATH-TO-TOMTOM-TOOL --database PATH-TO-MEME-TF-DATABASE
+satori.py Data/Arabidopsis/atAll_m200_s600 ModelsParam/CNN-RNN-MH-noEmbds_hyperParams.txt -w 8 --outDir results/Arabidopsis_GenomeWide_Analysis --mode train -v -s --background shuffle --intseqlimit 5000 --numlabels 36 --motifanalysis --interactions --method BOTH --attrbatchsize 32 --deskload --tomtompath PATH-TO-TOMTOM-TOOL --database PATH-TO-MEME-TF-DATABASE
 ```
 **Note:** make sure to specify path to the TomTom tool and the corresponding motif database.  
 ```PATH-TO-TOMTOM-TOOL``` path to TomTom tool in the MEME suite.  
 ```PATH-TO-MEME-TF-DATABASE``` path to the TF database to use (MEME suite comes with different databases).
 
 ### Post-processing
-The resutls are processed in separate Jupyter notebooks in the `Analysis` directory. The notebooks assume that the results are in ``Results`` folder, at the root (top level) directory of the repository.
+The resutls are processed in separate Jupyter notebooks in the `analysis` directory. The notebooks assume that the results are in ``results`` folder, at the root (top level) directory of the repository.

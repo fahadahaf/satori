@@ -1,5 +1,7 @@
 import os
+import sys
 import torch
+sys.path.insert(0,'src')
 
 from argparse import ArgumentParser
 from torch.backends import cudnn
