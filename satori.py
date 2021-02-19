@@ -8,10 +8,10 @@ from argparse import ArgumentParser
 from torch.backends import cudnn
 
 #local imports
-from experiment import run_experiment, motif_analysis, get_results_for_shuffled
-from process_attention import infer_intr_attention
-from process_fis import infer_intr_FIS
-from utils import get_params_dict, annotate_motifs
+from src.experiment import run_experiment, motif_analysis, get_results_for_shuffled
+from src.process_attention import infer_intr_attention
+from src.process_fis import infer_intr_FIS
+from src.utils import get_params_dict, annotate_motifs
 
 ####################################################################################################################
 ##################################--------------Argument Parsing--------------######################################
