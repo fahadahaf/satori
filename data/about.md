@@ -1,0 +1,1 @@
+Data for the four experiments (see manuscript).
