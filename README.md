@@ -39,7 +39,10 @@ python setup.py install
 ```
 chmod +x satori.py
 ```
-We recommend adding this directory to the PATH environment variable.
+5. We recommend adding this directory to the PATH environment variable:
+```
+export PATH=/path/to/satori:$PATH
+```
 
 ## Usage
 ```
