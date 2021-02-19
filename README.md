@@ -39,9 +39,10 @@ python setup.py install
 ```
 chmod +x satori.py
 ```
-5. We recommend adding this directory to the PATH environment variable:
+5. (Optional) To execute the script everywhere, update the PATH and PYTHONPATH environment variables:
 ```
 export PATH=/path/to/satori:$PATH
+export PYTHONPATH=/path/to/satori:$PYTHONPATH
 ```
 
 ## Usage
