@@ -28,7 +28,7 @@ def calculate_padding(inputLength, filterSize):
     return int(padding/2) #appended to both sides the half of what is needed
 
 
-def annotate_motifs(annotate_arg, motif_dir):
+def annotate_motifs(annotate_arg, motif_dir, store=True):
     ###-----------------Adding TF details to TomTom results----------------###
         try:
             tomtom_res = np.loadtxt(motif_dir+'/tomtom/tomtom.tsv',dtype=str,delimiter='\t')
@@ -36,7 +36,7 @@ def annotate_motifs(annotate_arg, motif_dir):
             print("Error! motif file not found. Make sure to do motif analysis first.")
             return
         if annotate_arg == 'default':#this for now makes sure that we don't annotate (will be added in future).
-            database = np.loadtxt('../../Basset_Splicing_IR-iDiffIR/Analysis_For_none_network-typeB_lotus_posThresh-0.60/MEME_analysis/Homo_sapiens_2019_01_14_4_17_pm/TF_Information_all_motifs.txt',dtype=str,delimiter='\t')
+            database = np.loadtxt('../../../Basset_Splicing_IR-iDiffIR/Analysis_For_none_network-typeB_lotus_posThresh-0.60/MEME_analysis/Homo_sapiens_2019_01_14_4_17_pm/TF_Information_all_motifs.txt',dtype=str,delimiter='\t')
         else:
             database = np.loadtxt(annotate_arg, dtype=str, delimiter='\t')
         final = []                                     
@@ -45,7 +45,10 @@ def annotate_motifs(annotate_arg, motif_dir):
             res = np.argwhere(database[:,3]==motifID)
             TFs = ','.join(database[res.flatten(),6])
             final.append(entry.tolist()+[TFs])
-        np.savetxt(motif_dir+'/tomtom/tomtom_annotated.tsv', final, delimiter='\t', fmt='%s')
+        if store:
+            np.savetxt(motif_dir+'/tomtom/tomtom_annotated.tsv', final, delimiter='\t', fmt='%s')
+        else:
+            return final
 
 
 def get_popsize_for_interactions(argSpace, per_batch_labelPreds, batchSize):
