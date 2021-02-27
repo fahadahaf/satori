@@ -1,0 +1,5 @@
+,TF_Interaction,TF1_Family,TF2_Family,adjusted_pval
+640,DNMT1$\longleftrightarrow$LCOR,CxxC,Pipsqueak,3.3808785240702084e-29
+348,DNMT1$\longleftrightarrow$EGR1,C2H2 ZF,CxxC,1.2976885588456118e-22
+359,EGR1$\longleftrightarrow$LCOR,C2H2 ZF,Pipsqueak,3.5829519599385964e-08
+323,FOXK2$\longleftrightarrow$EGR1,C2H2 ZF,Forkhead,0.00010876352832136811
