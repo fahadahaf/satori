@@ -210,7 +210,7 @@ def common_interaction_stats(df_method1, df_method2):
 
 def plot_interaction_comparison(df_comp, first_n=15, xlabel='TF interaction', store_pdf_path=None, fig_size=(9,6), alpha=0.6):
     ax = df_comp[:first_n].plot(kind='bar', x='interaction', y='count', color=df_comp['in_both'], figsize=fig_size, legend=False, alpha=alpha, fontsize=12)
-    ax.set_xlabel("TF interaction",fontsize=16)
+    ax.set_xlabel(xlabel,fontsize=16)
     ax.set_ylabel("# of occurences",fontsize=16)
     NA = mpatches.Patch(color='b', alpha = alpha, label='In both')
     EU = mpatches.Patch(color='r', alpha = alpha, label='FIS only')
