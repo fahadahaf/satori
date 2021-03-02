@@ -74,14 +74,14 @@ def plot_frequent_interactions(df, intr_level='TF_Interaction', first_n=15, colo
     plt.plot()
 
 
-def plot_interactions_and_distances_boxplot(dfx, first_n=20, sort_distances=False, tick_fontsize=14, label_fontsize=19, add_sub_caption=True, show_mean_dist=True, store_pdf_path=None, dist_color='salmon', cap_pos=[0.5,-0.79]):
+def plot_interactions_and_distances_boxplot(dfx, first_n=20, sort_distances=False, tick_fontsize=14, label_fontsize=19, add_sub_caption=True, show_median_dist=True, store_pdf_path=None, dist_color='salmon', cap_pos=[0.5,-0.79]):
     df = dfx.copy()
     res = df['TF_Interaction'].value_counts()[:first_n]
     list_distance = df.groupby('TF_Interaction')['mean_distance'].apply(list)[res.index]
     df_distance = pd.DataFrame([list_distance.keys(), list_distance.values]).T
     df_distance.columns = ['TF_Interaction', 'distances']
     df_distance['mean_distance'] = df_distance['distances'].apply(lambda x: np.mean(x))
-    mean_dist = df['mean_distance'].mean()
+    median_dist = np.median(df['mean_distance'])
     if sort_distances:
         df_distance.sort_values(by='mean_distance', inplace=True)
     fig, axes = plt.subplots(1, 2)
@@ -101,17 +101,17 @@ def plot_interactions_and_distances_boxplot(dfx, first_n=20, sort_distances=Fals
                 transform=ax1.transAxes)
         ax2.text(cap_pos[0], cap_pos[1], "(b)", size=23, ha="center", 
                 transform=ax2.transAxes)
-    if show_mean_dist:
-        ax2.axhline(y=mean_dist, xmin=0.0, xmax=1.0, color='steelblue', ls='--', lw=1.5)
+    if show_median_dist:
+        ax2.axhline(y=median_dist, xmin=0.0, xmax=1.0, color='steelblue', ls='--', lw=1.5)
     if store_pdf_path:
         plt.savefig(store_pdf_path, bbox_inches='tight')
     plt.show()
 
 
-def plot_interactions_and_distances_histogram(dfx, first_n=20, dist_nbins=25, tick_fontsize=14, label_fontsize=19, add_sub_caption=True, show_mean_dist=True, store_pdf_path=None, dist_colors=['salmon', 'cadetblue'], cap_pos=[0.5,-0.79]):
+def plot_interactions_and_distances_histogram(dfx, first_n=20, dist_nbins=25, tick_fontsize=14, label_fontsize=19, add_sub_caption=True, show_median_dist=True, store_pdf_path=None, dist_colors=['salmon', 'cadetblue'], cap_pos=[0.5,-0.79]):
     df = dfx.copy()
     res = df['TF_Interaction'].value_counts()[:first_n]
-    mean_dist = df['mean_distance'].mean()
+    median_dist = np.median(df['mean_distance'])
     fig, axes = plt.subplots(1, 2)
     ax1 = res.plot(kind='bar', color=dist_colors[0], figsize=(18,5), fontsize=tick_fontsize, ax=axes[0])
     ax1.set_xlabel("motif interaction",fontsize=label_fontsize)
@@ -126,8 +126,8 @@ def plot_interactions_and_distances_histogram(dfx, first_n=20, dist_nbins=25, ti
                 transform=ax1.transAxes)
         ax2.text(cap_pos[0], cap_pos[1], "(b)", size=23, ha="center", 
                 transform=ax2.transAxes)
-    if show_mean_dist:
-        ax2.axvline(x=mean_dist, ymin=0.0, ymax=1.0, color='indianred', ls='--', lw=1.5)
+    if show_median_dist:
+        ax2.axvline(x=median_dist, ymin=0.0, ymax=1.0, color='indianred', ls='--', lw=1.5)
     if store_pdf_path:
         plt.savefig(store_pdf_path, bbox_inches='tight')
     plt.show()

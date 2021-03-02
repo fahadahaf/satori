@@ -1,0 +1,10 @@
+,TF_Interaction,TF1_Family,TF2_Family,adjusted_pval
+744,HHEX$\longleftrightarrow$KDM2B,CxxC,Homeodomain,9.946979516953117e-16
+179,HHEX$\longleftrightarrow$TLX2,Homeodomain,Homeodomain,4.676886845217422e-15
+240,DNMT1$\longleftrightarrow$KDM2B,CxxC,CxxC,1.8381277364923687e-13
+583,SOX3$\longleftrightarrow$EGR1,Sox,C2H2 ZF,2.234370817699396e-08
+749,KDM2B$\longleftrightarrow$LCOR,CxxC,Pipsqueak,1.905942176430566e-06
+1067,DNMT1$\longleftrightarrow$LCOR,CxxC,Pipsqueak,2.036222057801201e-06
+957,HHEX$\longleftrightarrow$ZNF32,C2H2 ZF,Homeodomain,3.755383922337483e-05
+696,FOXK2$\longleftrightarrow$DNMT1,Forkhead,CxxC,0.0013034279229091773
+698,KDM2B$\longleftrightarrow$FOXK2,Forkhead,CxxC,0.017437007123833247
