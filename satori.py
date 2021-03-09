@@ -2,16 +2,16 @@
 import os
 import sys
 import torch
-sys.path.insert(0,'src')
+sys.path.insert(0,'satori')
 
 from argparse import ArgumentParser
 from torch.backends import cudnn
 
 #local imports
-from src.experiment import run_experiment, motif_analysis, get_results_for_shuffled
-from src.process_attention import infer_intr_attention
-from src.process_fis import infer_intr_FIS
-from src.utils import get_params_dict, annotate_motifs
+from satori.experiment import run_experiment, motif_analysis, get_results_for_shuffled
+from satori.process_attention import infer_intr_attention
+from satori.process_fis import infer_intr_FIS
+from satori.utils import get_params_dict, annotate_motifs
 
 ####################################################################################################################
 ##################################--------------Argument Parsing--------------######################################
