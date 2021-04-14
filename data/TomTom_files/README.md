@@ -1,2 +1,2 @@
 ### TomTom files  
-TomTom motif matching results are provided here for the four individual experiments.
+TomTom motif matching results are provided here for the individual experiments.
