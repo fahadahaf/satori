@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import pickle
+#import pdb
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -263,6 +264,11 @@ def run_experiment(device, arg_space, params):
     prefix = 'modelRes' #Using generic, not sure if we need it as an argument or part of the params dict
     train_loader, train_indices, test_loader, test_indices, valid_loader, valid_indices, output_dir = load_datasets(arg_space, batch_size)
     #print(params)
+    #---------test code-------#
+    #for batch in train_loader:
+    #    pdb.set_trace()
+    #    print(batch[0][:10])
+    #--------test code-------#
     net = AttentionNet(arg_space, params, device=device).to(device)
     if num_labels == 2:
         criterion = nn.CrossEntropyLoss(reduction='mean')
