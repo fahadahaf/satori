@@ -2,7 +2,7 @@
 **SATORI** is a **S**elf-**AT**tenti**O**n based deep learning model that captures **R**egulatory element **I**nteractions in genomic sequences. It can be used to infer a global landscape of interactions in a given genomic dataset, with a minimal post-processing step.
 
 ## Manuscript
-SATORI manuscript is [available](https://www.biorxiv.org/content/10.1101/2020.01.31.927996v3) on bioRxiv.
+Fahad Ullah, Asa Ben-Hur, A self-attention model for inferring cooperativity between regulatory features, Nucleic Acids Research, 2021;, gkab349, [https://doi.org/10.1093/nar/gkab349](https://doi.org/10.1093/nar/gkab349)
 
 ## Dependency
 **SATORI** is written in python 3. The following python packages are required:  
