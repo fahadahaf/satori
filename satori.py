@@ -80,6 +80,9 @@ def parseArgs():
     parser.add_argument('--testall', dest='testAll',
                         action='store_true', default=False,
                         help="Test on the entire dataset (default False). Useful for interaction/motif analysis.")
+    parser.add_argument('--usevalidtest', dest='useValidTest',
+                        action='store_true', default=False,
+                        help="Include the validation set in the final testing, motif, and interaction analyses (default False).")
     parser.add_argument('--useall', dest='useAll',
                         action='store_true', default=False,
                         help="Use all examples in multi-label problem instead of using precision based example selection.  Default is False.")
@@ -113,7 +116,7 @@ def main():
     experiment_blob = run_experiment(device, arg_space, params_dict)
     output_dir = experiment_blob['output_dir']
     test_resBlob = experiment_blob['res_test']
-    CNNWeights = experiment_blob['CNN_weights']
+    CNNWeights = experiment_blob['CNN_weights']    
 
     if arg_space.motifAnalysis:
         motif_dir_pos, _ = motif_analysis(test_resBlob, CNNWeights, arg_space, params_dict)

@@ -237,6 +237,8 @@ def load_datasets(arg_space, batchSize):
     else:
         final_dataset = DatasetLoadAll(input_prefix, num_labels=arg_space.numLabels) 
     train_indices, test_indices, valid_indices = get_indices(len(final_dataset), test_split, output_dir, mode=arg_space.mode)
+    if arg_space.useValidTest: #if we want to use validation set for final testing as well, useful for motif analysis
+        test_indices = np.concat((valid_indices, test_indices))
     train_sampler = SubsetRandomSampler(train_indices)
     test_sampler = SubsetRandomSampler(test_indices)
     valid_sampler = SubsetRandomSampler(valid_indices)
@@ -262,7 +264,7 @@ def run_experiment(device, arg_space, params):
     max_epochs = params['num_epochs']
 
     prefix = 'modelRes' #Using generic, not sure if we need it as an argument or part of the params dict
-    train_loader, train_indices, test_loader, test_indices, valid_loader, valid_indices, output_dir = load_datasets(arg_space, batch_size)
+    train_loader, train_indices, test_loader, test_indices, valid_loader, valid_indices,  output_dir = load_datasets(arg_space, batch_size)
     #print(params)
     #---------test code-------#
     #for batch in train_loader:
@@ -321,7 +323,10 @@ def run_experiment(device, arg_space, params):
         loss = checkpoint['loss']
     except:
         raise Exception(f"No pre-trained model found at {saved_model_dir}! Please run with --mode set to train.")
-
+    
+    sfx = ''
+    use arg_space.useValidTest:
+        sfx = '_validtest'
     if num_labels == 2:
         res_test = evaluateRegular(net, device, test_loader, criterion, output_dir+"/Stored_Values", getPAttn = genPAttn,
                                         storePAttn = arg_space.storeInterCNN, getCNN = getCNNout,
@@ -341,11 +346,11 @@ def run_experiment(device, arg_space, params):
         roc_dict = {'fpr':fpr, 'tpr':tpr, 'thresholds':thresholds}
         prc_dict = {'precision':precision, 'recall':recall, 'thresholds':thresholdsPR}
         #---Store results----#
-        with open(output_dir+'/'+prefix+'_roc.pckl','wb') as f:
+        with open(output_dir+'/'+prefix+f"_roc{sfx}.pckl",'wb') as f:
             pickle.dump(roc_dict,f)
-        with open(output_dir+'/'+prefix+'_prc.pckl','wb') as f:
+        with open(output_dir+'/'+prefix+f"_prc{sfx}.pckl",'wb') as f:
             pickle.dump(prc_dict,f)
-        np.savetxt(output_dir+'/'+prefix+'_results.txt',some_res,fmt='%s',delimiter='\t')
+        np.savetxt(output_dir+'/'+prefix+f"_results{sfx}.txt",some_res,fmt='%s',delimiter='\t')
     else:
         res_test = evaluateRegularMC(net, device, test_loader, criterion, output_dir+"/Stored_Values", getPAttn = genPAttn,
                                         storePAttn = arg_space.storeInterCNN, getCNN = getCNNout,
@@ -354,7 +359,7 @@ def run_experiment(device, arg_space, params):
         test_auc = res_test[1]
         if arg_space.verbose:
             print("Test Loss and mean AUC: ",test_loss, np.mean(test_auc))
-        np.savetxt(output_dir+'/per_class_AUC.txt',test_auc,delimiter='\t',fmt='%s')
+        np.savetxt(output_dir+f"/per_class_AUC{sfx}.txt",test_auc,delimiter='\t',fmt='%s')
 
     CNNWeights = net.layer1[0].weight.cpu().detach().numpy()
     res_blob = {'res_test': res_test, 
