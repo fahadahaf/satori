@@ -238,7 +238,7 @@ def load_datasets(arg_space, batchSize):
         final_dataset = DatasetLoadAll(input_prefix, num_labels=arg_space.numLabels) 
     train_indices, test_indices, valid_indices = get_indices(len(final_dataset), test_split, output_dir, mode=arg_space.mode)
     if arg_space.useValidTest: #if we want to use validation set for final testing as well, useful for motif analysis
-        test_indices = np.concat((valid_indices, test_indices))
+        test_indices = np.concatenate((valid_indices, test_indices))
     train_sampler = SubsetRandomSampler(train_indices)
     test_sampler = SubsetRandomSampler(test_indices)
     valid_sampler = SubsetRandomSampler(valid_indices)
