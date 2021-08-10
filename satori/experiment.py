@@ -325,7 +325,7 @@ def run_experiment(device, arg_space, params):
         raise Exception(f"No pre-trained model found at {saved_model_dir}! Please run with --mode set to train.")
     
     sfx = ''
-    use arg_space.useValidTest:
+    if arg_space.useValidTest:
         sfx = '_validtest'
     if num_labels == 2:
         res_test = evaluateRegular(net, device, test_loader, criterion, output_dir+"/Stored_Values", getPAttn = genPAttn,
