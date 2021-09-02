@@ -61,7 +61,10 @@ def plot_interaction_distance_distribution(df, nbins=30, fig_size=(12,8), color=
     plt.plot()
 
 
-def plot_frequent_interactions(df, intr_level='TF_Interaction', first_n=15, color='steelblue', fig_size=(18,6), store_pdf_path=None):
+def plot_frequent_interactions(df, intr_level='TF_Interaction', first_n=15, color='steelblue', fig_size=(18,6), store_pdf_path=None, drop_unknown=True):
+    df = df.copy()
+    if drop_unknown:
+        df = df[~df[intr_level].str.contains('UNKNOWN')]
     ax = df[intr_level].value_counts()[:first_n].plot(kind='bar', color=color, figsize=fig_size, fontsize=14)
     if intr_level == 'TF_Interaction':
         ax.set_xlabel("TF interaction",fontsize=19)
@@ -74,8 +77,10 @@ def plot_frequent_interactions(df, intr_level='TF_Interaction', first_n=15, colo
     plt.plot()
 
 
-def plot_interactions_and_distances_boxplot(dfx, first_n=20, sort_distances=False, tick_fontsize=14, label_fontsize=19, add_sub_caption=True, show_median_dist=True, store_pdf_path=None, dist_color='salmon', cap_pos=[0.5,-0.79]):
+def plot_interactions_and_distances_boxplot(dfx, first_n=20, sort_distances=False, tick_fontsize=14, label_fontsize=19, add_sub_caption=True, show_median_dist=True, store_pdf_path=None, dist_color='salmon', cap_pos=[0.5,-0.79], drop_unknown=True):    
     df = dfx.copy()
+    if drop_unknown:
+        df = df[~df['TF_Interaction'].str.contains('UNKNOWN')]
     res = df['TF_Interaction'].value_counts()[:first_n]
     list_distance = df.groupby('TF_Interaction')['mean_distance'].apply(list)[res.index]
     df_distance = pd.DataFrame([list_distance.keys(), list_distance.values]).T
@@ -108,8 +113,10 @@ def plot_interactions_and_distances_boxplot(dfx, first_n=20, sort_distances=Fals
     plt.show()
 
 
-def plot_interactions_and_distances_histogram(dfx, first_n=20, dist_nbins=25, tick_fontsize=14, label_fontsize=19, add_sub_caption=True, show_median_dist=True, store_pdf_path=None, dist_colors=['salmon', 'cadetblue'], cap_pos=[0.5,-0.79]):
+def plot_interactions_and_distances_histogram(dfx, first_n=20, dist_nbins=25, tick_fontsize=14, label_fontsize=19, add_sub_caption=True, show_median_dist=True, store_pdf_path=None, dist_colors=['salmon', 'cadetblue'], cap_pos=[0.5,-0.79], drop_unknown=True):
     df = dfx.copy()
+    if drop_unknown:
+        df = df[~df['TF_Interaction'].str.contains('UNKNOWN')]
     res = df['TF_Interaction'].value_counts()[:first_n]
     median_dist = np.median(df['mean_distance'])
     fig, axes = plt.subplots(1, 2)
